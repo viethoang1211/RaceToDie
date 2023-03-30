@@ -1,0 +1,10 @@
+
+*.db-wal
+*.db-shm
+.vs/RaceToDie/v17/.wsuo
+*.opendb
+*.vsidx
+*.lock
+*.db
+*.sqlite
+*.json

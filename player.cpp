@@ -1,11 +1,10 @@
 class Player {
-    int id;
+public:
     string nickname;
-    int points;
     int position;
-    int consecutive_wrong_answers;
-    bool disqualified;
-    
-    
-    chrono::steady_clock::time_point last_answer_time;
+    int points;
+    int wrong_answers_count;
+    int socketID;
+
+    Player(string n) : nickname(n), position(1), points(0), wrong_answers_count(0) {}
 };

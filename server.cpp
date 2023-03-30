@@ -20,10 +20,20 @@ using namespace std;
 
 // Constants
 const int MAX_CLIENTS = 10; // Maximum number of clients
+const int MIN_CLIENTS = 2;
 const int MIN_LENGTH = 3; // Minimum length of the race
 const int MAX_LENGTH = 26; // Maximum length of the race
 const int QUESTION_TIME = 10; // Time in seconds to answer each question
 const int MAX_NICKNAME_LENGTH=10; // Lenght of client name
+
+
+// Global variables
+int race_length;
+int player_count = 0;
+vector<Player> players;
+vector<bool> disqualified;
+queue<int> turn_order;
+mutex mtx;
 
 // Function prototypes
 //bool is_valid_nickname(string nickname);
@@ -36,8 +46,8 @@ const int MAX_NICKNAME_LENGTH=10; // Lenght of client name
 //int calculate_points(int correct_answers, vector<Player>& players, int fastest_player_index);
 
 
-// 1. register, map socketID voi ten
-bool is_valid_nickname(const string& nickname, const map<int, string>& player_nicknames) {
+// 1. register
+bool is_valid_nickname(const string& nickname) {
     if (nickname.empty() || nickname.length() > MAX_NICKNAME_LENGTH) {
         return false;
     }
@@ -48,13 +58,14 @@ bool is_valid_nickname(const string& nickname, const map<int, string>& player_ni
         }
     }
     // check trong map xem co ai trung ten khong
-    for (const auto& player : player_nicknames) {
-        if (player.second == nickname) {
+    for (auto p : players) {
+        if (p.nickname == nickname) {
             return false;
         }
     }
     return true;
 }
+
 
 // 3a. random so ngau nhien trong khoang min,max
 int getRandomInt(int min, int max) {
