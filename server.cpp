@@ -23,23 +23,65 @@ const int MAX_CLIENTS = 10; // Maximum number of clients
 const int MIN_LENGTH = 3; // Minimum length of the race
 const int MAX_LENGTH = 26; // Maximum length of the race
 const int QUESTION_TIME = 10; // Time in seconds to answer each question
-
+const int MAX_NICKNAME_LENGTH=10; // Lenght of client name
 
 // Function prototypes
-bool is_valid_nickname(string nickname);
-void announce(string message, int sockfd, sockaddr_in client);
-void send_int(int n, int sockfd, sockaddr_in client);
-int receive_int(int sockfd, sockaddr_in client);
-void send_string(string s, int sockfd, sockaddr_in client);
-string receive_string(int sockfd, sockaddr_in client);
-int generate_question();
-int calculate_points(int correct_answers, vector<Player>& players, int fastest_player_index);
+//bool is_valid_nickname(string nickname);
+//void announce(string message, int sockfd, sockaddr_in client);
+//void send_int(int n, int sockfd, sockaddr_in client);
+//int receive_int(int sockfd, sockaddr_in client);
+//void send_string(string s, int sockfd, sockaddr_in client);
+//string receive_string(int sockfd, sockaddr_in client);
+//int generate_question();
+//int calculate_points(int correct_answers, vector<Player>& players, int fastest_player_index);
 
 
+// 1. register, map socketID voi ten
+bool is_valid_nickname(const string& nickname, const map<int, string>& player_nicknames) {
+    if (nickname.empty() || nickname.length() > MAX_NICKNAME_LENGTH) {
+        return false;
+    }
+    for (char c : nickname) {
+    	// isalnum check whether c is either a decimal digit or an uppercase or lower case letter ( from library)
+        if (!isalnum(c) && c != '_') {
+            return false;
+        }
+    }
+    // check trong map xem co ai trung ten khong
+    for (const auto& player : player_nicknames) {
+        if (player.second == nickname) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// 3a. random so ngau nhien trong khoang min,max
 int getRandomInt(int min, int max) {
     return rand() % (max - min + 1) + min;
 }
+// 3a. lay random operator
+char getRandomOperator(){
+	int x = rand()%5;
+	switch(x):
+		case 0:
+			return '%';
+			break;
+		case 1:
+			return '+';
+			break;
+		case 2:
+			return '-';
+			break;
+		case 3:
+			return '*';
+			break;
+		case 4:
+			return '/';
+			break;
+}
 
+// 3c. tinh ket qua cua phep tinh
 int calculateAnswer(int a, int b, char op) {
     switch (op) {
         case '+':
@@ -48,7 +90,7 @@ int calculateAnswer(int a, int b, char op) {
             return a - b;
         case '*':
             return a * b;
-        case '/':
+        case '/':	
             if (b == 0) {
                 throw runtime_error("Division by zero");
             }
@@ -63,6 +105,7 @@ int calculateAnswer(int a, int b, char op) {
     }
 }
 
+// 3. each turn 
 void playSet(int raceLength, int playerCount, vector<Player>& players, int questionTimeLimit) {
     int currentPlayerIndex = 0;
     int questionCount = 0;
@@ -75,9 +118,10 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
         int b = getRandomInt(-10000, 10000);
         char op = getRandomOperator();
 
-        // Send the question to all players
+        // Make question and send the question to all players
         string question = to_string(a) + " " + string(1, op) + " " + to_string(b);
         for (int i = 0; i < playerCount; i++) {
+        	// not yet implemented
             players[i].socket.send(question);
         }
 
@@ -86,6 +130,7 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
         for (int i = 0; i < playerCount; i++) {
             bool receivedAnswer = players[i].socket.receive(answers[i], questionTimeLimit);
             if (!receivedAnswer) {
+            	// 3c_i. out of time 
                 players[i].score--;
                 players[i].socket.send("Out of time! You lost 1 point.");
             }
@@ -145,22 +190,6 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
     }
 }
 
-bool is_valid_nickname(const string& nickname, const map<int, string>& player_nicknames) {
-    if (nickname.empty() || nickname.length() > MAX_NICKNAME_LENGTH) {
-        return false;
-    }
-    for (char c : nickname) {
-        if (!isalnum(c) && c != '_') {
-            return false;
-        }
-    }
-    for (const auto& player : player_nicknames) {
-        if (player.second == nickname) {
-            return false;
-        }
-    }
-    return true;
-}
 
 
 int main() {
