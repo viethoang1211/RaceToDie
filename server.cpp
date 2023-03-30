@@ -116,6 +116,18 @@ int calculateAnswer(int a, int b, char op) {
     }
 }
 
+//3c iv update position
+void update_pos(){
+    for (int i = 0; i < players.size(); i++) {
+            players[i].position += points;
+            if(players[i].position<1)
+                players[i].position=1;
+            else if(players[i].position>race_length) 
+                players[i].position=race_length;
+        }
+}
+
+
 // 3. each turn 
 void playSet(int raceLength, int playerCount, vector<Player>& players, int questionTimeLimit) {
     int currentPlayerIndex = 0;
