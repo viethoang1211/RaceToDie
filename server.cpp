@@ -120,10 +120,10 @@ int calculateAnswer(int a, int b, char op) {
 void update_pos(){
     for (int i = 0; i < players.size(); i++) {
             players[i].position += points;
-            if(players[i].position<1)
-                players[i].position=1;
-            else if(players[i].position>race_length) 
-                players[i].position=race_length;
+            if (players[i].position < 1)
+                players[i].position = 1;
+            else if (players[i].position > race_length)
+                players[i].position = race_length;
         }
 }
 
@@ -133,9 +133,12 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
     int currentPlayerIndex = 0;
     int questionCount = 0;
     bool winnerFound = false;
+    vector<Message> messages;
 
     // Loop until a winner is found
     while (!winnerFound) {
+        message.clear();
+
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
         int b = getRandomInt(-10000, 10000);
@@ -144,7 +147,7 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
         // Make question and send the question to all players
         string question = to_string(a) + " " + string(1, op) + " " + to_string(b);
         for (int i = 0; i < playerCount; i++) {
-        	// not yet implemented
+            // not yet implemented
             players[i].socket.send(question);
         }
 
@@ -153,7 +156,7 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
         for (int i = 0; i < playerCount; i++) {
             bool receivedAnswer = players[i].socket.receive(answers[i], questionTimeLimit);
             if (!receivedAnswer) {
-            	// 3c_i. out of time 
+                // 3c_i. out of time 
                 players[i].score--;
                 players[i].socket.send("Out of time! You lost 1 point.");
             }
@@ -172,7 +175,8 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
                     maxPoints = points;
                     fastestPlayerIndex = i;
                 }
-            } else {
+            }
+            else {
                 players[i].score--;
                 players[i].wrongAnswers++;
                 players[i].socket.send("Wrong answer! You lost 1 point.");
@@ -186,6 +190,44 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
                 }
             }
         }
+
+
+        vector<Message> message(messages);
+
+        // xoa message nguoi sai
+        for (auto x = message.begin(); x != message.end(); ) {
+            if (x->text != correctAnswer) {
+                message.erase(x);
+            }
+            else {
+                ++x;
+            }
+        }
+
+        sort(message.begin(), message.end());
+        // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
+
+        // nguoi nhanh nhat co ton tai khong
+        bool fattestExist = false;
+
+        if (message.size() > 0) {
+            fattestExist = true;
+        }
+
+        // ten cua nguoi nhanh nhat
+        string fattestPlayername = "";
+        if (fattestExist) {
+            fattestPlayername = message.end()->name;
+        }
+        // tinh diem cho tung nguoi 
+        for (int i = 0; i< players.size()) {
+            if (x.name != fattestPlayername) {
+                
+            }
+        }
+
+
+        
 
         // Update positions and check for winner
         sort(players.begin(), players.end(), [](Player& a, Player& b) {
