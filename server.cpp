@@ -129,11 +129,13 @@ void update_pos(){
 
 
 // 3. each turn 
-void playSet(int raceLength, int playerCount, vector<Player>& players, int questionTimeLimit) {
+void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     int currentPlayerIndex = 0;
     int questionCount = 0;
     bool winnerFound = false;
     vector<Message> messages;
+    race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
+
 
     // Loop until a winner is found
     while (!winnerFound) {
@@ -161,11 +163,23 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
                 players[i].socket.send("Out of time! You lost 1 point.");
             }
         }
+        //vector<string> answers(playerCount);
+        //for (int i = 0; i < playerCount; i++) {
+        //    bool receivedAnswer = players[i].socket.receive(answers[i], questionTimeLimit);
+        //    if (!receivedAnswer) {
+        //    	// 3c_i. out of time 
+        //        players[i].score--;
+        //        players[i].socket.send("Out of time! You lost 1 point.");
+        //    }
+        //}
+
 
         // Calculate the correct answer and determine the fastest player
         int correctAnswer = calculateAnswer(a, b, op);
         int fastestPlayerIndex = -1;
         int maxPoints = -1;
+        
+
         for (int i = 0; i < playerCount; i++) {
             if (answers[i] == to_string(correctAnswer)) {
                 int points = calculatePoints(players, i, playerCount, maxPoints);
@@ -227,6 +241,7 @@ void playSet(int raceLength, int playerCount, vector<Player>& players, int quest
         }
 
 
+
         
 
         // Update positions and check for winner
@@ -284,7 +299,7 @@ int main() {
     cout << "Server is running on port 8888..." << endl;
     
     // Initialize the list of players
-    vector<Player> players;
+    players.clear();
     int num_players = 0;
     int race_length = 0;
     
