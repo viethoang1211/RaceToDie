@@ -177,9 +177,8 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         // Calculate the correct answer and determine the fastest player
         int correctAnswer = calculateAnswer(a, b, op);
         int fastestPlayerIndex = -1;
-        int maxPoints = -1;
-        
-
+        int pointForHighest = 0;
+    
         for (int i = 0; i < playerCount; i++) {
             if (answers[i] == to_string(correctAnswer)) {
                 int points = calculatePoints(players, i, playerCount, maxPoints);
@@ -189,10 +188,15 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                     maxPoints = points;
                     fastestPlayerIndex = i;
                 }
+                
+                // set lai chuoi thua
+                players[i].wrong_answers_count = 0;
+
             }
             else {
-                players[i].score--;
-                players[i].wrongAnswers++;
+                players[i].points--;
+                players[i].wrong_answers_count++;
+
                 players[i].socket.send("Wrong answer! You lost 1 point.");
                 if (players[i].wrongAnswers == 3) {
                     playerCount--;
@@ -204,7 +208,6 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 }
             }
         }
-
 
         vector<Message> message(messages);
 
@@ -234,11 +237,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             fattestPlayername = message.end()->name;
         }
         // tinh diem cho tung nguoi 
-        for (int i = 0; i< players.size()) {
-            if (x.name != fattestPlayername) {
-                
-            }
-        }
+        
 
 
 

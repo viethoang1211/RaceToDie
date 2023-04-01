@@ -1,5 +1,6 @@
 class Player {
 public:
+    
     string nickname;
     // vi tri hien tai
     int position;
@@ -7,6 +8,8 @@ public:
     int points;
     // 3 lan lien tiep la tach
     
+    // current answer
+    int currentAnswer;
     int wrong_answers_count;
     int socketID;
 
