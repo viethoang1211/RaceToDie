@@ -37,7 +37,7 @@ mutex mtx;
 
 // Function prototypes
 //bool is_valid_nickname(string nickname);
-//void announce(string message, int sockfd, sockaddr_in client);
+
 //void send_int(int n, int sockfd, sockaddr_in client);
 //int receive_int(int sockfd, sockaddr_in client);
 //void send_string(string s, int sockfd, sockaddr_in client);
@@ -304,7 +304,18 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         questionCount++;
     }
 }
+void announce(string message){
+    char * tem= message;
+     for (int i = 0; i < players.size(); i++) {
+        int bytes_sent = send(players[i].socketID,tem,strlen(tem),0);
+        if (bytes_sent==-1){
+        cout << "Send error at player:" i << endl;
+        return ;
+    }
 
+    }
+
+}
 
 
 int main() {
