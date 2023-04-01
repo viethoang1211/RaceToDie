@@ -209,6 +209,8 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             }
         }
 
+        // ------------ Tinh diem cho moi nguoi -------------------
+
         vector<Message> message(messages);
 
         // xoa message nguoi sai
@@ -231,20 +233,46 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             fattestExist = true;
         }
 
+
         // ten cua nguoi nhanh nhat
         string fattestPlayername = "";
         if (fattestExist) {
             fattestPlayername = message.end()->name;
         }
         // tinh diem cho tung nguoi 
+        for (auto x : players) {
+            x.points = -1;
+        }
+        int countWrong = 0;
+        for (int i = 0; i < players.size(); i++) {
+            if (players[i].nickname != fattestPlayer) {
+                for (auto j : messages) {
+                    if (j.clientID == players[i].socketID) {
+                        if (to_string(correctAnswer) == j.text) {
+                            players[i].points = 1;
+                        }
+                        else {
+                            countWrong++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        for (auto x : players) {
+            if (x.nickname == fattestPlayername) {
+                x.points = countWrong;
+            }
+        }
         
 
+        // ------------- end check -----------------
 
 
-        
 
-        // Update positions and check for winner
-        sort(players.begin(), players.end(), [](Player& a, Player& b) {
+        // -------------Update positions and check for winner---------------
+       
+        /* sort(players.begin(), players.end(), [](Player& a, Player& b) {
             return a.position > b.position;
         });
         for (int i = 0; i < playerCount; i++) {
@@ -261,7 +289,15 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             } else {
                 players[i].socket.send("Current position: " + to_string(players[i].position));
             }
+        }*/
+
+        update_pos();
+        for (int i = 0; i < players.length(); i++) {
+
         }
+
+
+        // --------------- end update --------------------
 
         // Switch to the next player
         currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;

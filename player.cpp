@@ -11,6 +11,7 @@ public:
     // current answer
     int currentAnswer;
     int wrong_answers_count;
+    // bang voi clientID cua message
     int socketID;
 
     Player(string n) : nickname(n), position(1), points(0), wrong_answers_count(0) {}
