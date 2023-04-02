@@ -15,7 +15,7 @@
 
 // .h file
 #include "player.cpp"
-
+#include "message.cpp"
 using namespace std;
 
 // Constants
@@ -139,7 +139,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
 
     // Loop until a winner is found
     while (!winnerFound) {
-        message.clear();
+        messages.clear();
 
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
@@ -265,11 +265,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             }
         }
         
-
         // ------------- end check -----------------
-
-
-
         // -------------Update positions and check for winner---------------
        
         /* sort(players.begin(), players.end(), [](Player& a, Player& b) {
@@ -304,15 +300,13 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         questionCount++;
     }
 }
-void announce(string message){
-    char * tem= message;
+void announce(char* message){
      for (int i = 0; i < players.size(); i++) {
-        int bytes_sent = send(players[i].socketID,tem,strlen(tem),0);
+        int bytes_sent = send(players[i].socketID,message,strlen(message),0);
         if (bytes_sent==-1){
-        cout << "Send error at player:" i << endl;
+        cout << "Send error at player:" << i << endl;
         return ;
     }
-
     }
 
 }
