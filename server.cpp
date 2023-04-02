@@ -149,8 +149,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         // Make question and send the question to all players
         string question = to_string(a) + " " + string(1, op) + " " + to_string(b);
         for (int i = 0; i < playerCount; i++) {
-            // not yet implemented
-            players[i].socket.send(question);
+            announce(question);
         }
 
         // Receive answers from all players
@@ -300,15 +299,17 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         questionCount++;
     }
 }
-void announce(char* message){
-     for (int i = 0; i < players.size(); i++) {
-        int bytes_sent = send(players[i].socketID,message,strlen(message),0);
+void announce(string message){
+    char* tem_message = new char[message.length() + 1];
+    strcpy(tem_message, message.c_str());
+    for (int i = 0; i < players.size(); i++) {
+        int bytes_sent = send(players[i].socketID,tem_message,strlen(tem_message),0);
         if (bytes_sent==-1){
         cout << "Send error at player:" << i << endl;
         return ;
     }
     }
-
+    delete[] tem_message;
 }
 
 
