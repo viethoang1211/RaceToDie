@@ -61,7 +61,7 @@ bool is_valid_nickname(const string& nickname) {
             return false;
         }
     }
-    // check trong map xem co ai trung ten khong
+    // check xem co ai trung ten khong
     for (auto p : players) {
         if (p.nickname == nickname) {
             return false;
@@ -130,12 +130,25 @@ void update_pos(){
         }
 }
 
+void announce(string message) {
+    char* tem_message = new char[message.length() + 1];
+    strcpy(tem_message, message.c_str());
+    for (int i = 0; i < players.size(); i++) {
+        int bytes_sent = send(players[i].socketID, tem_message, strlen(tem_message), 0);
+        if (bytes_sent == -1) {
+            cout << "Send error at player:" << i << endl;
+            return;
+        }
+    }
+    delete[] tem_message;
+}
 
 // 3. each turn 
 void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     int currentPlayerIndex = 0;
     int questionCount = 0;
     bool winnerFound = false;
+    // Toan bo message duoc nhan o server
     vector<Message> messages;
     int valread;
     race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
@@ -223,57 +236,58 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         int fastestPlayerIndex = -1;
         int pointForHighest = 0;
     
-        for (int i = 0; i < playerCount; i++) {
-            if (answers[i] == to_string(correctAnswer)) {
-                int points = calculatePoints(players, i, playerCount, maxPoints);
-                players[i].score += points;
-                players[i].position += points;
-                if (points > maxPoints) {
-                    maxPoints = points;
-                    fastestPlayerIndex = i;
-                }
-                
-                // set lai chuoi thua
-                players[i].wrong_answers_count = 0;
+        //for (int i = 0; i < playerCount; i++) {
+        //    if (answers[i] == to_string(correctAnswer)) {
+        //        int points = calculatePoints(players, i, playerCount, maxPoints);
+        //        players[i].score += points;
+        //        players[i].position += points;
+        //        if (points > maxPoints) {
+        //            maxPoints = points;
+        //            fastestPlayerIndex = i;
+        //        }
+        //        
+        //        // set lai chuoi thua
+        //        players[i].wrong_answers_count = 0;
 
-            }
-            else {
-                players[i].points--;
-                players[i].wrong_answers_count++;
+        //    }
+        //    else {
+        //        players[i].points--;
+        //        players[i].wrong_answers_count++;
 
-                players[i].socket.send("Wrong answer! You lost 1 point.");
-                if (players[i].wrongAnswers == 3) {
-                    playerCount--;
-                    players.erase(players.begin() + i);
-                    i--;
-                    for (int j = 0; j < playerCount; j++) {
-                        players[j].socket.send("One player disqualified! Remaining players: " + to_string(playerCount));
-                    }
-                }
-            }
-        }
+        //        players[i].socket.send("Wrong answer! You lost 1 point.");
+        //        if (players[i].wrongAnswers == 3) {
+        //            playerCount--;
+        //            players.erase(players.begin() + i);
+        //            i--;
+        //            for (int j = 0; j < playerCount; j++) {
+        //                players[j].socket.send("One player disqualified! Remaining players: " + to_string(playerCount));
+        //            }
+        //        }
+        //    }
+        //}
 
         // ------------ Tinh diem cho moi nguoi -------------------
 
-        vector<Message> message(messages);
+        // cop
+        vector<Message> message_copy(messages);
 
         // xoa message nguoi sai
-        for (auto x = message.begin(); x != message.end(); ) {
+        for (auto x = message_copy.begin(); x != message_copy.end(); ) {
             if (x->text != correctAnswer) {
-                message.erase(x);
+                message_copy.erase(x);
             }
             else {
                 ++x;
             }
         }
 
-        sort(message.begin(), message.end());
+        sort(message_copy.begin(), message_copy.end());
         // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
 
         // nguoi nhanh nhat co ton tai khong
         bool fattestExist = false;
 
-        if (message.size() > 0) {
+        if (message_copy.size() > 0) {
             fattestExist = true;
         }
 
@@ -281,7 +295,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         // ten cua nguoi nhanh nhat
         string fattestPlayername = "";
         if (fattestExist) {
-            fattestPlayername = message.end()->name;
+            fattestPlayername = message_copy.end()->name;
         }
         // tinh diem cho tung nguoi 
         for (auto x : players) {
@@ -291,7 +305,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         for (int i = 0; i < players.size(); i++) {
             if (players[i].nickname != fattestPlayer) {
                 for (auto j : messages) {
-                    if (j.clientID == players[i].socketID) {
+                    if (j.clientId == players[i].socketID) {
                         if (to_string(correctAnswer) == j.text) {
                             players[i].points = 1;
                         }
@@ -332,9 +346,12 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         }*/
 
         update_pos();
-        for (int i = 0; i < players.length(); i++) {
+        
+        
+        
+        /*for (int i = 0; i < players.length(); i++) {
 
-        }
+        }*/
 
 
         // --------------- end update --------------------
@@ -344,18 +361,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         questionCount++;
     }
 }
-void announce(string message){
-    char* tem_message = new char[message.length() + 1];
-    strcpy(tem_message, message.c_str());
-    for (int i = 0; i < players.size(); i++) {
-        int bytes_sent = send(players[i].socketID,tem_message,strlen(tem_message),0);
-        if (bytes_sent==-1){
-        cout << "Send error at player:" << i << endl;
-        return ;
-    }
-    }
-    delete[] tem_message;
-}
+
 
 
 int main() {
@@ -363,7 +369,9 @@ int main() {
     char* regsucess_message = "Registration Completed Successfully \r\n"; 
     char* regfail_message = "Registration Failed, Try again \r\n"; 
     char* start_message = "The game begins now \r\n"; 
+    
     int opt = true;  
+
     int addrlen , new_socket , client_socket[10] , activity, i , valread , sd;  
 
     struct sockaddr_in address;    
