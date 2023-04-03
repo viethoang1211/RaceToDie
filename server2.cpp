@@ -49,7 +49,6 @@ fd_set readfds;
 //int generate_question();
 //int calculate_points(int correct_answers, vector<Player>& players, int fastest_player_index);
 
-
 // 1. register
 bool is_valid_nickname(const string& nickname) {
     if (nickname.empty() || nickname.length() > MAX_NICKNAME_LENGTH) {
@@ -170,25 +169,16 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         for (int i = 0; i < playerCount; i++) {
             announce(question);
         }
-
-        // // Receive answers from all players
-        // vector<string> answers(playerCount);
-        // for (int i = 0; i < playerCount; i++) {
-        //     bool receivedAnswer = players[i].socket.receive(answers[i], questionTimeLimit);
-        //     if (!receivedAnswer) {
-        //         // 3c_i. out of time 
-        //         players[i].score--;
-        //         players[i].socket.send("Out of time! You lost 1 point.");
-        //     }
-        // }
+            auto start = std::chrono::high_resolution_clock::now(); // get the start time
+        while (true) {
         int activity = select( max_sd + 1 , &readfds , NULL , NULL , &timeout);    
         if ((activity < 0) && (errno!=EINTR))  
         {  
             printf("select error");  
         }        
-        for (int i = 0; i < MAX_CLIENTS; i++)  
+        for (auto i = players.begin(); i != players.end();)  
         {  
-            int sd = players[i].socketID;             
+            int sd = i->socketID;           
             if (FD_ISSET(sd, &readfds))  
             {  
                 //Check if it was for closing , and also read the 
@@ -200,36 +190,24 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                     // printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
                     //Close the socket and mark as 0 in list for reuse 
                     close(sd);  
-                    players.(i);
+                    players.erase(i);
                 } 
                 else 
                 {  
-                    if(is_valid_nickname(buffer)){
-                    //set the string terminating NULL byte on the end 
-                    //of the data read 
-                    send(sd , regsucess_message , strlen(regsucess_message) , 0 );  
-                    Player player1(buffer);
-                    player1.socketID=sd;
-                    players.push_back(player1);
-                    } 
-                    else {
-                    send(sd , regfail_message, strlen(regfail_message) , 0 );
-                    }
-                }
-                delete buffer; 
+                    Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
+                    messages.push_back(msg);
+                } 
+                delete buffer;
             }
-            
-        }    
-        //vector<string> answers(playerCount);
-        //for (int i = 0; i < playerCount; i++) {
-        //    bool receivedAnswer = players[i].socket.receive(answers[i], questionTimeLimit);
-        //    if (!receivedAnswer) {
-        //    	// 3c_i. out of time 
-        //        players[i].score--;
-        //        players[i].socket.send("Out of time! You lost 1 point.");
-        //    }
-        //}
-
+                
+        }
+        auto now = std::chrono::high_resolution_clock::now(); // get the current time
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count(); // get the elapsed time in milliseconds
+        if (duration >= 5000) { // if the elapsed time is greater than or equal to 5000 milliseconds (5 seconds)
+            break; // exit the loop
+        }
+    }        
+    }    
 
         // Calculate the correct answer and determine the fastest player
         int correctAnswer = calculateAnswer(a, b, op);
@@ -290,13 +268,12 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         if (message_copy.size() > 0) {
             fattestExist = true;
         }
-
-
         // ten cua nguoi nhanh nhat
         string fattestPlayername = "";
         if (fattestExist) {
             fattestPlayername = message_copy.end()->name;
         }
+
         // tinh diem cho tung nguoi 
         for (auto x : players) {
             x.points = -1;
@@ -495,23 +472,22 @@ int main() {
                     //set the string terminating NULL byte on the end 
                     //of the data read 
                     send(sd , regsucess_message , strlen(regsucess_message) , 0 );  
+                    // string s= buffer;
                     Player player1(buffer);
                     player1.socketID=sd;
                     players.push_back(player1);
                     } 
                     else {
                     send(sd , regfail_message, strlen(regfail_message) , 0 );
-                    }
-                } 
-            }
+                    } 
+                }
             
-        }    
+            }    
                 // Check if we have enough players to start the game
-                if (players.size()>= 3) {.
-                    announce(start_message);
-                    playSet(players.size(),players, QUESTION_TIME);
-            	}
-            }
-        }
+
+                }
+        if (players.size()>= 3) {.
+            announce(start_message);
+            playSet(players.size(),players, QUESTION_TIME);}
     }
 }
