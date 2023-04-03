@@ -280,7 +280,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         }
         int countWrong = 0;
         for (int i = 0; i < players.size(); i++) {
-            if (players[i].nickname != fattestPlayer) {
+            if (players[i].nickname != fattestPlayername) {
                 for (auto j : messages) {
                     if (j.clientId == players[i].socketID) {
                         if (to_string(correctAnswer) == j.text) {
@@ -337,7 +337,6 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;
         questionCount++;
     }
-}
 
 
 
@@ -346,11 +345,8 @@ int main() {
     char* regsucess_message = "Registration Completed Successfully \r\n"; 
     char* regfail_message = "Registration Failed, Try again \r\n"; 
     char* start_message = "The game begins now \r\n"; 
-    
     int opt = true;  
-
     int addrlen , new_socket , client_socket[10] , activity, i , valread , sd;  
-
     struct sockaddr_in address;    
     char buffer[1025];  //data buffer of 1K      
 
