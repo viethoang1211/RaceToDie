@@ -482,7 +482,7 @@ int main() {
                 // Check if we have enough players to start the game
 
                 }
-        if (players.size()>= 3) {.
+        if (players.size()>= 3) {
             announce(start_message);
             playSet(players.size(),players, QUESTION_TIME);}
     }

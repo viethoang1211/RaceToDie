@@ -76,19 +76,20 @@ int main() {
             return 1;
         }
         else{
-            if(!strcmp(validation,"Nickname Okay"))
+            if(!strcmp(validation,"Registration Completed Successfully \r\n"))
                 valid_nickname=false;
         }
     }
-} while (!valid_nickname);
+}
+    while (!valid_nickname);
     Player player1(nickname);
+    
     // Main game loop
     while (true) {
         
 
         // If game over message, break out of loop
     }
-
     // Close socket
     close(server_socket);
     return 0;
