@@ -34,8 +34,8 @@ vector<Player> players;
 vector<bool> disqualified;
 int master_socket;
 int max_sd;  
-queue<int> turn_order;
-mutex mtx;
+// queue<int> turn_order;
+// mutex mtx;
 //set of socket descriptors 
 fd_set readfds;  
 
@@ -76,7 +76,7 @@ int getRandomInt(int min, int max) {
 // 3a. lay random operator
 char getRandomOperator(){
 	int x = rand()%5;
-	switch(x):
+	switch(x){
 		case 0:
 			return '%';
 			break;
