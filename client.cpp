@@ -19,7 +19,7 @@
 #include <fcntl.h> // for non-blocking sockets
 // .h file
 #include "player.cpp"
-
+#include "packet.cpp"
 using namespace std;
 
 #define MAX_NICKNAME_LENGTH 10
@@ -104,7 +104,7 @@ int main() {
     Player player1(nickname);
     do {
         char buffer[1024];
-        int bytes_recv = recv(server_socket, buffer, strlen(buffer),0);
+        int bytes_recv = recv(server_socket, buffer,1024,0);
         if(bytes_recv<0){
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 cout << "Waiting for server to start the game" << endl;
@@ -122,23 +122,23 @@ int main() {
     } while(!in_progress);
 
     while (in_progress) {
+        char q_buffer[1024];
+        char answer[1024];
         round++;
         cout << "Round " << round << " will start now" << endl;
-        char buffer[1024];
-        int bytes_recv1 = recv(server_socket, buffer, strlen(buffer),0);
-        if(bytes_recv1<0){
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+        int bytes_received2;
+        while((bytes_received2 = recv(server_socket, q_buffer, 1024,0)) < 0){
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
                 cout << "Waiting for server to start the game" << endl;
-        }
-        else if (bytes_recv1==0){
-            cout << "Server has closed connection" << endl;
-            return -1;
-        }
         else{
-            cout << "Question: " << buffer << endl;
+            Packet p1;
+            cout << "Question: " << q_buffer << endl;
             
         }
-        delete buffer;
+        }
+        cout << "Your answer:";
+        cin.getline(answer, 16);
+        delete q_buffer;
     }
     // Close socket
     close(server_socket);
