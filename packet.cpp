@@ -6,7 +6,7 @@ public:
     // the type of message, defined at server
     int type;
     // message to other side, maybe a annoucement or a name of player
-    char Context[50];
+    char Context[50]="";
     // point of this round 
     int point;
     // position of the player
@@ -17,5 +17,10 @@ public:
         point=p1;
         position=p2;
         strcpy(Context,context);
+    }
+    Packet(){
+        type=0;
+        point=0;
+        position=0;
     }
 };
