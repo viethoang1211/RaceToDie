@@ -1,6 +1,8 @@
+#include <cstring>
+#include <string>
+using namespace std;
 class Player {
 public:
-    
     string nickname;
     // vi tri hien tai
     int position;

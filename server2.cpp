@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdlib>
-#include <cstring>
-#include <string>
+// #include <cstring>
+// #include <string>
 #include <vector>
 #include <ctime>
 #include <chrono>
@@ -169,7 +169,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         for (int i = 0; i < playerCount; i++) {
             announce(question);
         }
-            auto start = std::chrono::high_resolution_clock::now(); // get the start time
+        auto start = std::chrono::high_resolution_clock::now(); // get the start time
         while (true) {
         int activity = select( max_sd + 1 , &readfds , NULL , NULL , &timeout);    
         if ((activity < 0) && (errno!=EINTR))  
