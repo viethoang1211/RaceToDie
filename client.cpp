@@ -24,37 +24,46 @@ using namespace std;
 
 #define MAX_NICKNAME_LENGTH 10
 #define SERVER_PORT 8888
-void read_packet(Packet &p,int t, char* &c, int &p1, int &p2, int socket){
+// global variable
+char server_ip[16];
+char nickname[MAX_NICKNAME_LENGTH + 1];
+struct sockaddr_in server_addr;
+int server_socket;
+int race_length;
+int answer_time;
+bool in_progress=false;
+int round=0;
+vector<Player> players;
+
+void read_packet(Packet &p){
     int nbytes_read;
-    int length;
-    do{
-    nbytes_read=recv(socket,(char *)t,1,0);
-    if(errno == EAGAIN || errno == EWOULDBLOCK){
-        // cout << "Waiting for server";
-        sleep(1);
-    }
-    else{
-        cout << "Type: " << t <<endl;
-        nbytes_read=recv(socket,(char *)length,2,0);
-        cout << "Length: " << length << endl;
-        nbytes_read=recv(socket,c,length,0);
-        cout << "Context: " << c << endl;
-        nbytes_read=recv(socket,(char *)p1,2,0);
-        cout << "Point: " << p1 << endl;
-        nbytes_read=recv(socket,(char *)p2,2,0);
-        cout << "Position: " << p2 << endl;
-    }
-    }while(nbytes_read<0);
+    int l;
+    char* length= reinterpret_cast<char*>(&l);
+    char* point = reinterpret_cast<char*>(&p.point);
+    char* position = reinterpret_cast<char*>(&p.position);
+    nbytes_read=recv(server_socket,length,2,0);
+    // do{
+    // if(errno == EAGAIN || errno == EWOULDBLOCK){
+    //     // cout << "Waiting for server";
+    //     sleep(1);
+    // }
+    // else{
+        l= atoi(length);
+        cout << "Length: " << l << endl;
+        nbytes_read=recv(server_socket,p.Context,l,0);
+        cout << "Context: " << p.Context << endl;
+        nbytes_read=recv(server_socket,point,2,0);
+        p.point= atoi(point);
+        cout << "Point: " << p.point << endl;
+        nbytes_read=recv(server_socket,position,2,0);
+        p.position= atoi(position);
+        cout << "Position: " << p.position << endl;
+    // }
+    // }while(nbytes_read<0);
 }
 
 int main() {
-    char server_ip[16];
-    char nickname[MAX_NICKNAME_LENGTH + 1];
-    struct sockaddr_in server_addr;
-    int server_socket;
-    int race_length;
-    bool in_progress=false;
-    int round=0;
+
     // Get server IP from user input
     // cout << "Enter server IP: ";
     // cin.getline(server_ip, 16);
@@ -124,9 +133,10 @@ int main() {
     while (!valid_nickname);
 
     Player player1(nickname);
+    players.push_back(player1);
     do {
-        char buffer[1024];
-        int bytes_recv = recv(server_socket, buffer,1024,0);
+        char buffer[1];
+        int bytes_recv = recv(server_socket, buffer,1,0);
         if(bytes_recv<0){
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 cout << "Waiting for server to start the game" << endl;
@@ -136,32 +146,67 @@ int main() {
             return -1;
         }
         else{
-            cout << "The length of the game will be:" << buffer << endl;
-            race_length= stoi(buffer);
-            in_progress=true;
+            Packet p1;
+            read_packet(p1);
+            race_length= p1.point;
+            answer_time=p1.position;
+            cout << "The game will start now: " << endl;
+            cout << "The race length will be: " << race_length;
+            cout << "Time to answer a question will be: " << answer_time << " seconds" << endl;
         }
         delete buffer;
     } while(!in_progress);
 
     while (in_progress) {
-        char q_buffer[1024];
-        char answer[1024];
+        // prepare for the first round, create a player object for each player the server send back
+        if(round==0){
+            char buffer[1];
+            while(recv(server_socket, buffer, 1,0) < 0){
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    cout << "Waiting for server to start the game" << endl;
+                else{
+                    Packet p2;
+                    read_packet(p2);
+                    Player player2(p2.Context);
+                    players.push_back(player2);
+                    }
+        }
+        }
+        // where player get question and answer
+        char q_buffer[1];
+        int answer;
         round++;
         cout << "Round " << round << " will start now" << endl;
         int bytes_received2;
-        while((bytes_received2 = recv(server_socket, q_buffer, 1024,0)) < 0){
+        while(recv(server_socket, q_buffer, 1,0) < 0){
         if (errno == EAGAIN || errno == EWOULDBLOCK)
-                cout << "Waiting for server to start the game" << endl;
+                cout << "Waiting for server to send the question" << endl;
         else{
-            Packet p1;
-            cout << "Question: " << q_buffer << endl;
-            
+            Packet p2;
+            read_packet(p2);
+            cout << "Question: " << p2.Context << endl;
         }
         }
         cout << "Your answer:";
-        cin.getline(answer, 16);
-        
-        delete q_buffer;
+        cin >> answer;
+        while (cin.fail()) {
+            cout << "Invalid input. Type again" << endl;
+            cin.clear(); // clear the error state
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // ignore any remaining characters in the input stream
+            cin >> answer;
+        }
+        send(server_socket, (char*)answer,sizeof(answer), 0);
+        while(recv(server_socket, q_buffer, 1,0) < 0){
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                cout << "Waiting for server to send the solution" << endl;
+            else{
+            Packet p2;
+            read_packet(p2);
+            cout << "Solution: " << p2.Context << endl;
+            cout << "Point earned: "<< p2.point << endl;
+            }
+        }
+        // delete q_buffer;
     }
     // Close socket
     close(server_socket);

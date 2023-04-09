@@ -5,7 +5,7 @@ class Packet {
 public:
     // the type of message, defined at server
     int type;
-    // length of 
+    // length of the context
     int length;
     // message to other side, maybe a annoucement or a name of player
     char Context[100]="";
