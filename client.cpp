@@ -63,8 +63,6 @@ void read_packet(Packet &p){
 }
 
 int main() {
-
-    // Get server IP from user input
     // cout << "Enter server IP: ";
     // cin.getline(server_ip, 16);
     // server_ip= "127.0.0.1";
@@ -92,7 +90,7 @@ int main() {
     bool valid_nickname = false;
     do {
     cout << "Enter nickname (up to 10 characters): ";
-    cin >> nickname; 
+    cin.getline(nickname,10);
     int bytes_sent1=-1;
     while(bytes_sent1<0) {
         bytes_sent1 = send(server_socket, nickname, strlen(nickname), 0);
@@ -172,6 +170,46 @@ int main() {
                     }
         }
         }
+        else{
+            // update the point of position of each player before the round
+            char buffer[1];
+            while(recv(server_socket, buffer, 1,0) < 0){
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    cout << "Waiting for server to start a new round" << endl;
+                else{
+                    Packet p2;
+                    read_packet(p2);
+                    for (auto x : players){
+                        if(p2.Context==x.nickname){
+                            x.points=p2.point;
+                            x.position=p2.position;
+                        }
+                    }
+
+                }
+            }
+            // check for disqualified players and vitors
+            for (auto i = players.begin(); i != players.end();){
+                if(i->position==-1 && i->nickname != nickname)
+                    players.erase(i);
+                else if(i->position==-1 && i->nickname == nickname){
+                    cout << "You have been killed by the cruelty of this race." << endl;
+                    break;
+                }
+                if(i->points>=race_length){
+                    if(i->nickname == nickname){
+                    cout << "Victory achieved" << endl;
+                    in_progress=false;
+                    }
+                    else{
+                    cout << "Victory achieved, but not by you lol" << endl;
+                    in_progress=false;
+                    }
+                }
+            }
+        }
+        if(!in_progress)
+            break;
         // where player get question and answer
         char q_buffer[1];
         int answer;
@@ -196,6 +234,7 @@ int main() {
             cin >> answer;
         }
         send(server_socket, (char*)answer,sizeof(answer), 0);
+        // show the solution to the players
         while(recv(server_socket, q_buffer, 1,0) < 0){
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 cout << "Waiting for server to send the solution" << endl;
@@ -206,6 +245,7 @@ int main() {
             cout << "Point earned: "<< p2.point << endl;
             }
         }
+
         // delete q_buffer;
     }
     // Close socket

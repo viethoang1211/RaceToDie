@@ -61,7 +61,7 @@ bool is_valid_nickname(const string& nickname) {
         }
     }
     // check xem co ai trung ten khong
-    for (auto p : players) {
+    for ( p : players) {
         if (p.nickname == nickname) {
             return false;
         }
