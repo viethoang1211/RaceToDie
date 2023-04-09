@@ -24,6 +24,28 @@ using namespace std;
 
 #define MAX_NICKNAME_LENGTH 10
 #define SERVER_PORT 8888
+void read_packet(Packet &p,int t, char* &c, int &p1, int &p2, int socket){
+    int nbytes_read;
+    int length;
+    do{
+    nbytes_read=recv(socket,(char *)t,1,0);
+    if(errno == EAGAIN || errno == EWOULDBLOCK){
+        // cout << "Waiting for server";
+        sleep(1);
+    }
+    else{
+        cout << "Type: " << t <<endl;
+        nbytes_read=recv(socket,(char *)length,2,0);
+        cout << "Length: " << length << endl;
+        nbytes_read=recv(socket,c,length,0);
+        cout << "Context: " << c << endl;
+        nbytes_read=recv(socket,(char *)p1,2,0);
+        cout << "Point: " << p1 << endl;
+        nbytes_read=recv(socket,(char *)p2,2,0);
+        cout << "Position: " << p2 << endl;
+    }
+    }while(nbytes_read<0);
+}
 
 int main() {
     char server_ip[16];
@@ -138,6 +160,7 @@ int main() {
         }
         cout << "Your answer:";
         cin.getline(answer, 16);
+        
         delete q_buffer;
     }
     // Close socket

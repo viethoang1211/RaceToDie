@@ -5,8 +5,10 @@ class Packet {
 public:
     // the type of message, defined at server
     int type;
+    // length of 
+    int length;
     // message to other side, maybe a annoucement or a name of player
-    char Context[50]="";
+    char Context[100]="";
     // point of this round 
     int point;
     // position of the player
