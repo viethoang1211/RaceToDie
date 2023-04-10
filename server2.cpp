@@ -61,7 +61,7 @@ bool is_valid_nickname(const string& nickname) {
         }
     }
     // check xem co ai trung ten khong
-    for ( p : players) {
+    for (auto p : players) {
         if (p.nickname == nickname) {
             return false;
         }
@@ -154,7 +154,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     struct timeval timeout;
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
-
+    
     // Loop until a winner is found
     while (!winnerFound) {
         messages.clear();
@@ -346,7 +346,7 @@ int main() {
     char* regfail_message = "Registration Failed, Try again \r\n"; 
     char* start_message = "The game begins now \r\n"; 
     int opt = true;  
-    int addrlen , new_socket , client_socket[10] , activity, i , valread , sd;  
+    int addrlen, new_socket , client_socket[10] , activity, i , valread , sd;  
     struct sockaddr_in address;    
     char buffer[1025];  //data buffer of 1K      
 
@@ -368,7 +368,6 @@ int main() {
         perror("setsockopt");  
         exit(EXIT_FAILURE);  
     }  
-     
     //type of socket created 
     address.sin_family = AF_INET;  
     address.sin_addr.s_addr = INADDR_ANY;  
@@ -390,7 +389,6 @@ int main() {
     }     
     //accept the incoming connection 
     addrlen = sizeof(address);   
-    
     while (true) {
         //clear the socket set 
         FD_ZERO(&readfds);    
@@ -409,8 +407,7 @@ int main() {
             if(sd > max_sd)  
                 max_sd = sd;  
         }     
-        //wait for an activity on one of the sockets , timeout is NULL , 
-        //so wait indefinitely 
+        //wait for an activity on one of the sockets , timeout is NULL , //so wait indefinitely 
         activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);    
         if ((activity < 0) && (errno!=EINTR))  
         {  
@@ -420,18 +417,17 @@ int main() {
         //then its an incoming connection 
         if (FD_ISSET(master_socket, &readfds))  
         {  
-            if ((new_socket = accept(master_socket, 
-                    (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)  
+            if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)  
             {  
                 perror("accept");  
                 exit(EXIT_FAILURE);  
             }  
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));     
             //send new connection greeting message 
-            if( send(new_socket, hello_message, strlen(hello_message), 0) != strlen(hello_message) )  
-            {  
-                perror("send");  
-            }            
+            // if( send(new_socket, hello_message, strlen(hello_message), 0) != strlen(hello_message) )  
+            // {  
+            //     perror("send");  
+            // }            
             //add new socket to array of sockets 
             for (i = 0; i < MAX_CLIENTS; i++)  
             {  
@@ -450,40 +446,39 @@ int main() {
             sd = client_socket[i];              
             if (FD_ISSET( sd , &readfds))  
             {  
-                //Check if it was for closing , and also read the 
-                //incoming message 
+                //Check if it was for closing , and also read the incoming message 
                 if ((valread = read( sd , buffer, 1024)) == 0)  
                 {  
                     //Somebody disconnected , get his details and print 
                     getpeername(sd , (struct sockaddr*)&address ,(socklen_t*)&addrlen);  
-                    printf("Host disconnected , ip %s , port %d \n" , 
-                          inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
-                    //Close the socket and mark as 0 in list for reuse 
+                    printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
                     close(sd);  
                     client_socket[i] = 0;  
                 } 
                 else 
                 {  
                     if(is_valid_nickname(buffer)){
-                    //set the string terminating NULL byte on the end 
-                    //of the data read 
+                    //set the string terminating NULL byte on the end of the data read 
                     send(sd , regsucess_message , strlen(regsucess_message) , 0 );  
                     // string s= buffer;
                     Player player1(buffer);
                     player1.socketID=sd;
                     players.push_back(player1);
                     } 
-                    else {
+                    else 
                     send(sd , regfail_message, strlen(regfail_message) , 0 );
-                    } 
                 }
             
             }    
-                // Check if we have enough players to start the game
-
-                }
+            
+        }
+        // Check if we have enough players to start the game
         if (players.size()>= 3) {
             announce(start_message);
-            playSet(players.size(),players, QUESTION_TIME);}
+            playSet(players.size(),players, QUESTION_TIME);
+            break;
+        }
+        
     }
+    return 0;
 }

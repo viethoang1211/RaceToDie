@@ -48,16 +48,16 @@ void read_packet(Packet &p){
     //     sleep(1);
     // }
     // else{
-        l= atoi(length);
-        cout << "Length: " << l << endl;
-        nbytes_read=recv(server_socket,p.Context,l,0);
-        cout << "Context: " << p.Context << endl;
-        nbytes_read=recv(server_socket,point,2,0);
-        p.point= atoi(point);
-        cout << "Point: " << p.point << endl;
-        nbytes_read=recv(server_socket,position,2,0);
-        p.position= atoi(position);
-        cout << "Position: " << p.position << endl;
+    l= atoi(length);
+    cout << "Length: " << l << endl;
+    nbytes_read=recv(server_socket,p.Context,l,0);
+    cout << "Context: " << p.Context << endl;
+    nbytes_read=recv(server_socket,point,2,0);
+    p.point= atoi(point);
+    cout << "Point: " << p.point << endl;
+    nbytes_read=recv(server_socket,position,2,0);
+    p.position= atoi(position);
+    cout << "Position: " << p.position << endl;
     // }
     // }while(nbytes_read<0);
 }
@@ -106,15 +106,15 @@ int main() {
             return 1;
             }
         }
-        char validation[10];
+        char validation[50];
         int byets_received1;
         do{
-        byets_received1 = recv(server_socket, validation, 10, 0);
-        if (byets_received1 == -1) {
+        byets_received1 = recv(server_socket, validation, 50, 0);
+        if (byets_received1 <1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 cout << "Waiting for nickname vaildation" << endl;
                 // The socket is temporarily unavailable, wait and try again
-                sleep(1);
+                // sleep(1);
             } 
             else {
                 cout << "Error recv data" << endl;
@@ -124,6 +124,8 @@ int main() {
         else{
             if(strcmp(validation,"Registration Completed Successfully \r\n"))
                 valid_nickname=true;
+            else
+                cout << "Nickname not valid, try again." << endl;
             }
         }
         while(byets_received1<0);
@@ -151,6 +153,7 @@ int main() {
             cout << "The game will start now: " << endl;
             cout << "The race length will be: " << race_length;
             cout << "Time to answer a question will be: " << answer_time << " seconds" << endl;
+            in_progress=true;
         }
         delete buffer;
     } while(!in_progress);
