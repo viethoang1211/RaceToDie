@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <cstdlib>
 
 // For sockets
 #include <sys/socket.h>
@@ -143,7 +144,7 @@ void announce_start_game(){
     // char* buffer1 = reinterpret_cast<char*>(&race_length);
     // char* buffer2 = reinterpret_cast<char*>(&quesion_time);
     // strcpy(msg,buffer1);
-    snprintf(type, sizeof(type), "%d", 1);
+    snprintf(type, sizeof(type), "%d", 2);
     snprintf(length, sizeof(length), "0%d", 0);
     if(race_length<9)
         snprintf(point, sizeof(point), "0%d", race_length);
@@ -169,6 +170,26 @@ void announce_new_round(){
             char length[2];
             char point[2];
             char position[2];
+            snprintf(type, sizeof(type), "%d", 1);
+            snprintf(length, sizeof(length), "%d", strlen(i.nickname.c_str()));
+            snprintf(point, sizeof(point), "0%d",0 );
+
+            if(i.position<9)
+            snprintf(position,sizeof(position), "0%d", i.position);
+            else
+            snprintf(position, sizeof(position), "%d", i.position);
+
+            char msg[100];
+            strcpy(msg,type);
+            strcat(msg,length);
+            strcat(msg, i.nickname.c_str());
+            strcat(msg,point);
+            strcat(msg,position);
+            int bytes_sent = send(x.socketID, msg, strlen(msg), 0);
+            if (bytes_sent == -1) {
+            cout << "Send error at player:" << x.nickname << endl;
+            return;
+            }
         }
     }
 }
@@ -177,7 +198,7 @@ void announce_question(string question){
     char length[2];
     char point[2];
     char position[2];
-    snprintf(type, sizeof(type), "%d", 2);
+    snprintf(type, sizeof(type), "%d", 3);
     snprintf(length, sizeof(length), "%d", strlen(question.c_str()));
     snprintf(point, sizeof(point), "0%d", 0);
     snprintf(position, sizeof(position), "0%d", 0);
@@ -222,7 +243,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         // Make question and send the question to all players
         string question = to_string(a) + " " + string(1, op) + " " + to_string(b);
         for (int i = 0; i < playerCount; i++) {
-            announce(question);
+            announce_question(question);
         }
         auto start = std::chrono::high_resolution_clock::now(); // get the start time
         while (true) 
@@ -264,11 +285,15 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         int correctAnswer = calculateAnswer(a, b, op);
         int fastestPlayerIndex = -1;
         int pointForHighest = 0;
-        announce_solution();
+        char str[10];
+        // Convert integer to string
+        // itoa(correctAnswer, str, 10);
+        string correctA= to_string(correctAnswer);
+        announce_question(correctA);
         vector<Message> message_copy(messages);
         // xoa message nguoi sai
         for (auto x = message_copy.begin(); x != message_copy.end(); ) {
-            if (x->text != correctAnswer) {
+            if (stoi(x->text) != correctAnswer) {
                 message_copy.erase(x);
             }
             else {
@@ -314,6 +339,11 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             }
         }
         update_pos();
+        for (auto x : players) {
+            if (x.position==race_length) {
+                return;
+            }
+        }
         announce_new_round();
     }    
 
