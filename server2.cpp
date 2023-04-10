@@ -13,9 +13,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
+#include <fcntl.h> // for non-blocking sockets
 // .h file
 #include "player.cpp"
 #include "message.cpp"
+#include "packet.cpp"
 using namespace std;
 
 // Constants
@@ -93,6 +95,7 @@ char getRandomOperator(){
 			return '/';
 			break;
 }
+}
 
 // 3c. tinh ket qua cua phep tinh
 int calculateAnswer(int a, int b, char op) {
@@ -121,7 +124,7 @@ int calculateAnswer(int a, int b, char op) {
 //3c iv update position
 void update_pos(){
     for (int i = 0; i < players.size(); i++) {
-            players[i].position += points;
+            players[i].position += players[i].points;
             if (players[i].position < 1)
                 players[i].position = 1;
             else if (players[i].position > race_length)
@@ -170,175 +173,167 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             announce(question);
         }
         auto start = std::chrono::high_resolution_clock::now(); // get the start time
-        while (true) {
-        int activity = select( max_sd + 1 , &readfds , NULL , NULL , &timeout);    
-        if ((activity < 0) && (errno!=EINTR))  
-        {  
-            printf("select error");  
-        }        
-        for (auto i = players.begin(); i != players.end();)  
-        {  
-            int sd = i->socketID;           
-            if (FD_ISSET(sd, &readfds))  
+        while (true) 
+        {
+            int activity = select( max_sd + 1 , &readfds , NULL , NULL , &timeout);    
+            if ((activity < 0) && (errno!=EINTR))  
             {  
-                //Check if it was for closing , and also read the 
-                //incoming message
-                char* buffer;  //data buffer of 1K   
-                if ((valread = read(sd,buffer,1024)) == 0)  
+                printf("select error");  
+            }        
+            for (auto i = players.begin(); i != players.end();)  
+            {  
+                int sd = i->socketID;           
+                if (FD_ISSET(sd, &readfds))  
                 {  
-                    // getpeername(sd , (struct sockaddr*)&address ,(socklen_t*)&addrlen);  
-                    // printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
-                    //Close the socket and mark as 0 in list for reuse 
-                    close(sd);  
-                    players.erase(i);
-                } 
-                else 
-                {  
-                    Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
-                    messages.push_back(msg);
-                } 
-                delete buffer;
+                    //Check if it was for closing , and also read the 
+                    //incoming message
+                    char* buffer;  //data buffer of 1K   
+                    if ((valread = read(sd,buffer,1024)) == 0)  
+                    {  
+                        // getpeername(sd , (struct sockaddr*)&address ,(socklen_t*)&addrlen);  
+                        // printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
+                        //Close the socket and mark as 0 in list for reuse 
+                        close(sd);  
+                        players.erase(i);
+                    } 
+                    else 
+                    {  
+                        Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
+                        messages.push_back(msg);
+                    } 
+                    delete buffer;
+                }         
             }
-                
-        }
-        auto now = std::chrono::high_resolution_clock::now(); // get the current time
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count(); // get the elapsed time in milliseconds
-        if (duration >= 5000) { // if the elapsed time is greater than or equal to 5000 milliseconds (5 seconds)
-            break; // exit the loop
-        }
-    }        
+            auto now = std::chrono::high_resolution_clock::now(); // get the current time
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count(); // get the elapsed time in milliseconds
+            if (duration >= 5000) { // if the elapsed time is greater than or equal to 5000 milliseconds (5 seconds)
+                break; // exit the loop
+            }
+        }           
     }    
 
-        // Calculate the correct answer and determine the fastest player
-        int correctAnswer = calculateAnswer(a, b, op);
-        int fastestPlayerIndex = -1;
-        int pointForHighest = 0;
-    
-        //for (int i = 0; i < playerCount; i++) {
-        //    if (answers[i] == to_string(correctAnswer)) {
-        //        int points = calculatePoints(players, i, playerCount, maxPoints);
-        //        players[i].score += points;
-        //        players[i].position += points;
-        //        if (points > maxPoints) {
-        //            maxPoints = points;
-        //            fastestPlayerIndex = i;
-        //        }
-        //        
-        //        // set lai chuoi thua
-        //        players[i].wrong_answers_count = 0;
+    // Calculate the correct answer and determine the fastest player
+    // int correctAnswer = calculateAnswer(a, b, op);
+    int fastestPlayerIndex = -1;
+    int pointForHighest = 0;
 
-        //    }
-        //    else {
-        //        players[i].points--;
-        //        players[i].wrong_answers_count++;
+    //for (int i = 0; i < playerCount; i++) {
+    //    if (answers[i] == to_string(correctAnswer)) {
+    //        int points = calculatePoints(players, i, playerCount, maxPoints);
+    //        players[i].score += points;
+    //        players[i].position += points;
+    //        if (points > maxPoints) {
+    //            maxPoints = points;
+    //            fastestPlayerIndex = i;
+    //        }
+    //        
+    //        // set lai chuoi thua
+    //        players[i].wrong_answers_count = 0;
 
-        //        players[i].socket.send("Wrong answer! You lost 1 point.");
-        //        if (players[i].wrongAnswers == 3) {
-        //            playerCount--;
-        //            players.erase(players.begin() + i);
-        //            i--;
-        //            for (int j = 0; j < playerCount; j++) {
-        //                players[j].socket.send("One player disqualified! Remaining players: " + to_string(playerCount));
-        //            }
-        //        }
-        //    }
-        //}
+    //    }
+    //    else {
+    //        players[i].points--;
+    //        players[i].wrong_answers_count++;
 
-        // ------------ Tinh diem cho moi nguoi -------------------
+    //        players[i].socket.send("Wrong answer! You lost 1 point.");
+    //        if (players[i].wrongAnswers == 3) {
+    //            playerCount--;
+    //            players.erase(players.begin() + i);
+    //            i--;
+    //            for (int j = 0; j < playerCount; j++) {
+    //                players[j].socket.send("One player disqualified! Remaining players: " + to_string(playerCount));
+    //            }
+    //        }
+    //    }
+    //}
 
-        // cop
-        vector<Message> message_copy(messages);
+    // ------------ Tinh diem cho moi nguoi -------------------
 
-        // xoa message nguoi sai
-        for (auto x = message_copy.begin(); x != message_copy.end(); ) {
-            if (x->text != correctAnswer) {
-                message_copy.erase(x);
-            }
-            else {
-                ++x;
-            }
+    // cop
+    vector<Message> message_copy(messages);
+
+    // xoa message nguoi sai
+    for (auto x = message_copy.begin(); x != message_copy.end(); ) {
+        if (x->text != correctAnswer) {
+            message_copy.erase(x);
         }
-
-        sort(message_copy.begin(), message_copy.end());
-        // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
-
-        // nguoi nhanh nhat co ton tai khong
-        bool fattestExist = false;
-
-        if (message_copy.size() > 0) {
-            fattestExist = true;
+        else {
+            ++x;
         }
-        // ten cua nguoi nhanh nhat
-        string fattestPlayername = "";
-        if (fattestExist) {
-            fattestPlayername = message_copy.end()->name;
-        }
-
-        // tinh diem cho tung nguoi 
-        for (auto x : players) {
-            x.points = -1;
-        }
-        int countWrong = 0;
-        for (int i = 0; i < players.size(); i++) {
-            if (players[i].nickname != fattestPlayername) {
-                for (auto j : messages) {
-                    if (j.clientId == players[i].socketID) {
-                        if (to_string(correctAnswer) == j.text) {
-                            players[i].points = 1;
-                        }
-                        else {
-                            countWrong++;
-                        }
-                    }
-                }
-            }
-        }
-        
-        for (auto x : players) {
-            if (x.nickname == fattestPlayername) {
-                x.points = countWrong;
-            }
-        }
-        
-        // ------------- end check -----------------
-        // -------------Update positions and check for winner---------------
-       
-        /* sort(players.begin(), players.end(), [](Player& a, Player& b) {
-            return a.position > b.position;
-        });
-        for (int i = 0; i < playerCount; i++) {
-            if (players[i].position >= raceLength) {
-                winnerFound = true;
-                for (int j = 0; j < playerCount; j++) {
-                    if (j == i) {
-                        players[j].socket.send("You won the game!");
-                    } else {
-                        players[j].socket.send("Player " + players[i].nickname + " won the game!");
-                    }
-                }
-                break;
-            } else {
-                players[i].socket.send("Current position: " + to_string(players[i].position));
-            }
-        }*/
-
-        update_pos();
-        
-        
-        
-        /*for (int i = 0; i < players.length(); i++) {
-
-        }*/
-
-
-        // --------------- end update --------------------
-
-        // Switch to the next player
-        currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;
-        questionCount++;
     }
 
+    sort(message_copy.begin(), message_copy.end());
+    // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
 
+    // nguoi nhanh nhat co ton tai khong
+    bool fattestExist = false;
+    if (message_copy.size() > 0) {
+        fattestExist = true;
+    }
+    // ID cua nguoi nhanh nhat
+    int fattestPlayerID=-1;
+    if (fattestExist) {
+        fattestPlayerID = message_copy.end()->clientId;
+    }
+    // tinh diem cho tung nguoi 
+    for (auto x : players) {
+        x.points = -1;
+    }
+    int countWrong = 0;
+    for (int i = 0; i < players.size(); i++) {
+        if (players[i].socketID != fattestPlayerID) {
+            for (auto j : messages) {
+                if (j.clientId == players[i].socketID) {
+                    if (to_string(correctAnswer) == j.text) {
+                        players[i].points = 1;
+                    }
+                    else {
+                        countWrong++;
+                    }
+                }
+            }
+        }
+    }
+    
+    for (auto x : players) {
+        if (x.socketID == fattestPlayerID) {
+            x.points = countWrong;
+        }
+    }
+    
+    // ------------- end check -----------------
+    // -------------Update positions and check for winner---------------
+    
+    /* sort(players.begin(), players.end(), [](Player& a, Player& b) {
+        return a.position > b.position;
+    });
+    for (int i = 0; i < playerCount; i++) {
+        if (players[i].position >= raceLength) {
+            winnerFound = true;
+            for (int j = 0; j < playerCount; j++) {
+                if (j == i) {
+                    players[j].socket.send("You won the game!");
+                } else {
+                    players[j].socket.send("Player " + players[i].nickname + " won the game!");
+                }
+            }
+            break;
+        } else {
+            players[i].socket.send("Current position: " + to_string(players[i].position));
+        }
+    }*/
+
+    update_pos();
+    /*for (int i = 0; i < players.length(); i++) {
+
+    }*/
+
+    // --------------- end update --------------------
+
+    // Switch to the next player
+    currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;
+    questionCount++;
+}
 
 int main() {
     char* hello_message = "Welcome to the RaceToDie \r\n"; 
@@ -356,11 +351,13 @@ int main() {
         client_socket[i] = 0;  
     }   
     //create a master socket 
-    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)  
+    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) < 0)  
     {  
         perror("socket failed");  
         exit(EXIT_FAILURE);  
     }  
+    int flags = fcntl(master_socket, F_GETFL, 0);
+    fcntl(master_socket, F_SETFL,flags | O_NONBLOCK);
     //set master socket to allow multiple connections , 
     //this is just a good habit, it will work without this 
     if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )  
@@ -412,6 +409,7 @@ int main() {
         if ((activity < 0) && (errno!=EINTR))  
         {  
             printf("select error");  
+            continue;
         }        
         //If something happened on the master socket , 
         //then its an incoming connection 
@@ -473,7 +471,7 @@ int main() {
             
         }
         // Check if we have enough players to start the game
-        if (players.size()>= 3) {
+        if (players.size()>= 2) {
             announce(start_message);
             playSet(players.size(),players, QUESTION_TIME);
             break;
