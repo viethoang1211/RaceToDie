@@ -26,12 +26,12 @@ const int MAX_CLIENTS = 10; // Maximum number of clients
 const int MIN_CLIENTS = 2;
 const int MIN_LENGTH = 3; // Minimum length of the race
 const int MAX_LENGTH = 26; // Maximum length of the race
-const int QUESTION_TIME = 10; // Time in seconds to answer each question
+const int QUESTION_TIME = 25; // Time in seconds to answer each question
 const int MAX_NICKNAME_LENGTH=10; // Lenght of client name
 
 
 // Global variables
-int quesion_time=10;
+int quesion_time=25;
 int race_length;
 int player_count = 0;
 vector<Player> players;
@@ -137,28 +137,36 @@ void announce(string message) {
 }
 
 void announce_start_game(){
-    char type[1];
-    char length[2];
-    char point[2];
-    char position[2];
+    char type[10];
+    char length[10];
+    char point[10];
+    char position[10];
     // char* buffer1 = reinterpret_cast<char*>(&race_length);
     // char* buffer2 = reinterpret_cast<char*>(&quesion_time);
     // strcpy(msg,buffer1);
     snprintf(type, sizeof(type), "%d", 2);
+    cout << "Type:" << type<< endl;
     snprintf(length, sizeof(length), "0%d", 0);
+    cout << "L:" << length<< endl;
     if(race_length<9)
         snprintf(point, sizeof(point), "0%d", race_length);
     else
         snprintf(point, sizeof(point), "%d", race_length);
+    cout << "P1:" << race_length<< endl;
     if(quesion_time<9)
         snprintf(position,sizeof(position), "0%d", quesion_time);
     else
         snprintf(position, sizeof(position), "%d", quesion_time);
+    cout << "P2:" << quesion_time<< endl;
     char msg[100];
     strcpy(msg,type);
+    cout << msg << endl;
     strcat(msg,length);
+    cout << msg << endl;
     strcat(msg,point);
+    cout << msg << endl;
     strcat(msg,position);
+    cout << msg << endl;
     for(auto x: players){
         send(x.socketID,msg,strlen(msg),0);
     }
@@ -232,8 +240,11 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     struct timeval timeout;
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
+    announce_start_game();
+    sleep(2);
     // Loop until a winner is found
     while (!winnerFound) {
+        announce_new_round();
         messages.clear();
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
@@ -341,10 +352,10 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         update_pos();
         for (auto x : players) {
             if (x.position==race_length) {
-                return;
+                winnerFound=true;
             }
         }
-        announce_new_round();
+        
     }    
 
     // Calculate the correct answer and determine the fastest player
@@ -423,7 +434,7 @@ int main() {
     int opt = true;  
     int addrlen, new_socket , client_socket[10] , activity, i , valread , sd;  
     struct sockaddr_in address;    
-    char buffer[1025];  //data buffer of 1K      
+    char buffer[100];  //data buffer of 1K      
 
     //initialise all client_socket[] to 0 so not checked 
     for (i = 0; i < MAX_CLIENTS; i++)  
@@ -526,7 +537,7 @@ int main() {
             if (FD_ISSET( sd , &readfds))  
             {  
                 //Check if it was for closing , and also read the incoming message 
-                if ((valread = read( sd , buffer, 1024)) == 0)  
+                if ((valread = recv( sd ,buffer, sizeof(buffer),0)) == 0)  
                 {  
                     //Somebody disconnected , get his details and print 
                     getpeername(sd , (struct sockaddr*)&address ,(socklen_t*)&addrlen);  
@@ -539,19 +550,22 @@ int main() {
                     if(is_valid_nickname(buffer)){
                     //set the string terminating NULL byte on the end of the data read 
                     send(sd , regsucess_message , strlen(regsucess_message) , 0 );  
-                    // string s= buffer;
+                    cout << "regsuccess send on" << sd << endl;
                     Player player1(buffer);
                     player1.socketID=sd;
                     players.push_back(player1);
                     } 
-                    else 
+                    else {
+                    cout << "Reg failed on" << sd << endl;
                     send(sd , regfail_message, strlen(regfail_message) , 0 );
+                    }
                 }
             
             }          
         }
         // Check if we have enough players to start the game
         if (players.size()>= 2) {
+            
             // announce(start_message);
             playSet(players.size(),players, QUESTION_TIME);
             break;

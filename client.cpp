@@ -91,9 +91,10 @@ int main() {
     do {
     cout << "Enter nickname (up to 10 characters): ";
     cin.getline(nickname,10);
+    cout << nickname << endl;
     int bytes_sent1=-1;
     while(bytes_sent1<0) {
-        bytes_sent1 = send(server_socket, nickname, strlen(nickname), 0);
+        bytes_sent1 = send(server_socket,(char*) nickname, sizeof(nickname), 0);
         if(bytes_sent1==0){
             cout << "Connection closed, can't send" << endl;
             return 1;
@@ -123,7 +124,9 @@ int main() {
         } 
         else{
             if(strcmp(validation,"Registration Completed Successfully"))
-                valid_nickname=true;
+            {   valid_nickname=true;
+                cout << validation;
+                }
             else
                 cout << "Nickname not valid, try again." << endl;
             }
@@ -140,6 +143,7 @@ int main() {
         if(bytes_recv<0){
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 cout << "Waiting for server to start the game" << endl;
+                // continue;
         }
         else if (bytes_recv==0){
             cout << "Server has closed connection" << endl;
@@ -155,7 +159,6 @@ int main() {
             cout << "Time to answer a question will be: " << answer_time << " seconds" << endl;
             in_progress=true;
         }
-        delete buffer;
     } while(!in_progress);
 
     while (in_progress) {
@@ -199,7 +202,7 @@ int main() {
                     cout << "You have been killed by the cruelty of this race." << endl;
                     break;
                 }
-                if(i->points>=race_length){
+                if(i->position>=race_length){
                     if(i->nickname == nickname){
                     cout << "Victory achieved" << endl;
                     in_progress=false;
