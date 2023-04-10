@@ -122,7 +122,7 @@ int main() {
             }
         } 
         else{
-            if(strcmp(validation,"Registration Completed Successfully \r\n"))
+            if(strcmp(validation,"Registration Completed Successfully"))
                 valid_nickname=true;
             else
                 cout << "Nickname not valid, try again." << endl;

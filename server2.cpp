@@ -30,6 +30,7 @@ const int MAX_NICKNAME_LENGTH=10; // Lenght of client name
 
 
 // Global variables
+int quesion_time=10;
 int race_length;
 int player_count = 0;
 vector<Player> players;
@@ -94,8 +95,7 @@ char getRandomOperator(){
 		case 4:
 			return '/';
 			break;
-}
-}
+}}
 
 // 3c. tinh ket qua cua phep tinh
 int calculateAnswer(int a, int b, char op) {
@@ -118,8 +118,7 @@ int calculateAnswer(int a, int b, char op) {
             return a % b;
         default:
             throw runtime_error("Invalid operator");
-    }
-}
+    }}
 
 //3c iv update position
 void update_pos(){
@@ -133,18 +132,73 @@ void update_pos(){
 }
 
 void announce(string message) {
-    char* tem_message = new char[message.length() + 1];
-    strcpy(tem_message, message.c_str());
-    for (int i = 0; i < players.size(); i++) {
-        int bytes_sent = send(players[i].socketID, tem_message, strlen(tem_message), 0);
+
+}
+
+void announce_start_game(){
+    char type[1];
+    char length[2];
+    char point[2];
+    char position[2];
+    // char* buffer1 = reinterpret_cast<char*>(&race_length);
+    // char* buffer2 = reinterpret_cast<char*>(&quesion_time);
+    // strcpy(msg,buffer1);
+    snprintf(type, sizeof(type), "%d", 1);
+    snprintf(length, sizeof(length), "0%d", 0);
+    if(race_length<9)
+        snprintf(point, sizeof(point), "0%d", race_length);
+    else
+        snprintf(point, sizeof(point), "%d", race_length);
+    if(quesion_time<9)
+        snprintf(position,sizeof(position), "0%d", quesion_time);
+    else
+        snprintf(position, sizeof(position), "%d", quesion_time);
+    char msg[100];
+    strcpy(msg,type);
+    strcat(msg,length);
+    strcat(msg,point);
+    strcat(msg,position);
+    for(auto x: players){
+        send(x.socketID,msg,strlen(msg),0);
+    }
+}
+void announce_new_round(){
+    for(auto x: players){
+        for(auto i: players){
+            char type[1];
+            char length[2];
+            char point[2];
+            char position[2];
+        }
+    }
+}
+void announce_question(string question){
+    char type[1];
+    char length[2];
+    char point[2];
+    char position[2];
+    snprintf(type, sizeof(type), "%d", 2);
+    snprintf(length, sizeof(length), "%d", strlen(question.c_str()));
+    snprintf(point, sizeof(point), "0%d", 0);
+    snprintf(position, sizeof(position), "0%d", 0);
+    char msg[100];
+    strcpy(msg,type);
+    strcat(msg,length);
+    strcat(msg, question.c_str());
+    strcat(msg,point);
+    strcat(msg,position);
+    for (auto i: players) {
+        int bytes_sent = send(i.socketID, msg, strlen(msg), 0);
         if (bytes_sent == -1) {
-            cout << "Send error at player:" << i << endl;
+            cout << "Send error at player:" << i.nickname << endl;
             return;
         }
     }
-    delete[] tem_message;
+    // delete msg;
 }
-
+void announce_solution(){
+    
+}
 // 3. each turn 
 void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     int currentPlayerIndex = 0;
@@ -157,11 +211,9 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     struct timeval timeout;
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
-    
     // Loop until a winner is found
     while (!winnerFound) {
         messages.clear();
-
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
         int b = getRandomInt(-10000, 10000);
@@ -185,8 +237,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 int sd = i->socketID;           
                 if (FD_ISSET(sd, &readfds))  
                 {  
-                    //Check if it was for closing , and also read the 
-                    //incoming message
+                    //Check if it was for closing , and also read the incoming message
                     char* buffer;  //data buffer of 1K   
                     if ((valread = read(sd,buffer,1024)) == 0)  
                     {  
@@ -209,13 +260,65 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             if (duration >= 5000) { // if the elapsed time is greater than or equal to 5000 milliseconds (5 seconds)
                 break; // exit the loop
             }
-        }           
+        }
+        int correctAnswer = calculateAnswer(a, b, op);
+        int fastestPlayerIndex = -1;
+        int pointForHighest = 0;
+        announce_solution();
+        vector<Message> message_copy(messages);
+        // xoa message nguoi sai
+        for (auto x = message_copy.begin(); x != message_copy.end(); ) {
+            if (x->text != correctAnswer) {
+                message_copy.erase(x);
+            }
+            else {
+                ++x;
+            }
+        }
+
+        sort(message_copy.begin(), message_copy.end());
+        // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
+
+        // nguoi nhanh nhat co ton tai khong
+        bool fattestExist = false;
+        if (message_copy.size() > 0) {
+            fattestExist = true;
+        }
+        // ID cua nguoi nhanh nhat
+        int fattestPlayerID=-1;
+        if (fattestExist) {
+            fattestPlayerID = message_copy.end()->clientId;
+        }
+        // tinh diem cho tung nguoi 
+        for (auto x : players) {
+            x.points = -1;
+        }
+        int countWrong = 0;
+        for (int i = 0; i < players.size(); i++) {
+            if (players[i].socketID != fattestPlayerID) {
+                for (auto j : messages) {
+                    if (j.clientId == players[i].socketID) {
+                        if (to_string(correctAnswer) == j.text) {
+                            players[i].points = 1;
+                        }
+                        else {
+                            countWrong++;}
+                    }
+                }
+            }
+        }
+        
+        for (auto x : players) {
+            if (x.socketID == fattestPlayerID) {
+                x.points = countWrong;
+            }
+        }
+        update_pos();
+        announce_new_round();
     }    
 
     // Calculate the correct answer and determine the fastest player
-    // int correctAnswer = calculateAnswer(a, b, op);
-    int fastestPlayerIndex = -1;
-    int pointForHighest = 0;
+    
 
     //for (int i = 0; i < playerCount; i++) {
     //    if (answers[i] == to_string(correctAnswer)) {
@@ -249,58 +352,6 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
 
     // ------------ Tinh diem cho moi nguoi -------------------
 
-    // cop
-    vector<Message> message_copy(messages);
-
-    // xoa message nguoi sai
-    for (auto x = message_copy.begin(); x != message_copy.end(); ) {
-        if (x->text != correctAnswer) {
-            message_copy.erase(x);
-        }
-        else {
-            ++x;
-        }
-    }
-
-    sort(message_copy.begin(), message_copy.end());
-    // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
-
-    // nguoi nhanh nhat co ton tai khong
-    bool fattestExist = false;
-    if (message_copy.size() > 0) {
-        fattestExist = true;
-    }
-    // ID cua nguoi nhanh nhat
-    int fattestPlayerID=-1;
-    if (fattestExist) {
-        fattestPlayerID = message_copy.end()->clientId;
-    }
-    // tinh diem cho tung nguoi 
-    for (auto x : players) {
-        x.points = -1;
-    }
-    int countWrong = 0;
-    for (int i = 0; i < players.size(); i++) {
-        if (players[i].socketID != fattestPlayerID) {
-            for (auto j : messages) {
-                if (j.clientId == players[i].socketID) {
-                    if (to_string(correctAnswer) == j.text) {
-                        players[i].points = 1;
-                    }
-                    else {
-                        countWrong++;
-                    }
-                }
-            }
-        }
-    }
-    
-    for (auto x : players) {
-        if (x.socketID == fattestPlayerID) {
-            x.points = countWrong;
-        }
-    }
-    
     // ------------- end check -----------------
     // -------------Update positions and check for winner---------------
     
@@ -323,23 +374,22 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         }
     }*/
 
-    update_pos();
+    
     /*for (int i = 0; i < players.length(); i++) {
 
     }*/
 
     // --------------- end update --------------------
-
     // Switch to the next player
     currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;
     questionCount++;
 }
 
 int main() {
-    char* hello_message = "Welcome to the RaceToDie \r\n"; 
-    char* regsucess_message = "Registration Completed Successfully \r\n"; 
-    char* regfail_message = "Registration Failed, Try again \r\n"; 
-    char* start_message = "The game begins now \r\n"; 
+    char* hello_message = "Welcome to the RaceToDie"; 
+    char* regsucess_message = "Registration Completed Successfully"; 
+    char* regfail_message = "Registration Failed, Try again"; 
+    char* start_message = "The game begins now"; 
     int opt = true;  
     int addrlen, new_socket , client_socket[10] , activity, i , valread , sd;  
     struct sockaddr_in address;    
@@ -419,7 +469,9 @@ int main() {
             {  
                 perror("accept");  
                 exit(EXIT_FAILURE);  
-            }  
+            } 
+            int flags = fcntl(new_socket, F_GETFL, 0);
+            fcntl(new_socket, F_SETFL,flags | O_NONBLOCK); 
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));     
             //send new connection greeting message 
             // if( send(new_socket, hello_message, strlen(hello_message), 0) != strlen(hello_message) )  
@@ -437,7 +489,6 @@ int main() {
                     break;  
                 }  
             } 
-
         }  
         for (i = 0; i < MAX_CLIENTS; i++)  
         {  
@@ -467,16 +518,14 @@ int main() {
                     send(sd , regfail_message, strlen(regfail_message) , 0 );
                 }
             
-            }    
-            
+            }          
         }
         // Check if we have enough players to start the game
         if (players.size()>= 2) {
-            announce(start_message);
+            // announce(start_message);
             playSet(players.size(),players, QUESTION_TIME);
             break;
-        }
-        
+        }   
     }
     return 0;
 }
