@@ -3,7 +3,8 @@
 #include <cstring>
 using namespace std;
 int getRandomInt(int min, int max) {
-    return rand() % (max - min + 1) + min;
+  srand(time(NULL));
+  return rand() % (max - min + 1) + min;
 }
 int main(void) {
   //  char buffer[50];
@@ -22,6 +23,6 @@ int main(void) {
   //  snprintf(buffer1, sizeof(buffer1), " and it's twice %d", num*2);
   //  strcat(buffer, buffer1);
   //  cout << buffer;
-  cout << getRandomInt(3,9);
+  cout << getRandomInt(4,15);
   return 0;
 }
