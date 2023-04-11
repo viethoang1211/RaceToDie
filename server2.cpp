@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdlib>
-// #include <cstring>
-// #include <string>
+#include <cstring>
+#include <string>
 #include <vector>
 #include <ctime>
 #include <chrono>
@@ -9,10 +9,25 @@
 #include <algorithm>
 #include <cstdlib>
 #include <random>
-
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <io.h>
 // For sockets
-#include <sys/socket.h>
-#include <arpa/inet.h>
+// #include <sys/socket.h>
+// #include <arpa/inet.h>
+
+#ifdef WIN32
+    #include <winsock.h>
+	#include <winsock2.h>
+    typedef int socklen_t;
+#else
+  #include <sys/socket.h>
+  #include <arpa/inet.h>
+  #include <sys/un.h>
+#endif
+
+#pragma comment(lib, "ws2_32.lib")
+
 #include <unistd.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
 #include <fcntl.h> // for non-blocking sockets
@@ -187,6 +202,7 @@ void announce_new_round(){
             strcat(msg,position);
             cout <<"New round message: "<< msg << endl;
             int bytes_sent = send(x.socketID, msg, strlen(msg), 0);
+            cout<<"Bytes sent: "<< bytes_sent<<endl;
             if (bytes_sent == -1) {
             cout << "Send error at player:" << x.nickname << endl;
             return;
@@ -215,6 +231,7 @@ void announce_question(string question){
     strcat(msg,point);
     strcat(msg,position);
     cout <<"Question or answer message: "<< msg << endl;
+    cout <<players.size() << endl;
     for (auto i: players) {
         int bytes_sent = send(i.socketID, msg, strlen(msg), 0);
         if (bytes_sent == -1) {
@@ -320,7 +337,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         vector<Message> message_copy(messages);
         // xoa message nguoi sai
         for (auto x = message_copy.begin(); x != message_copy.end(); ) {
-            if (stoi(x->text) != correctAnswer) {
+            if (x->text != to_string(correctAnswer)) {
                 message_copy.erase(x);
             }
             else {
@@ -395,13 +412,22 @@ int main() {
         client_socket[i] = 0;  
     }   
     //create a master socket 
+    WSADATA wsaData;
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != 0) {
+        std::cout << "WSAStartup failed: " << iResult << std::endl;
+        return 1;
+    }
+
     if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) < 0)  
     {  
         perror("socket failed");  
         exit(EXIT_FAILURE);  
     }  
-    int flags = fcntl(master_socket, F_GETFL, 0);
-    fcntl(master_socket, F_SETFL,flags | O_NONBLOCK);
+    // int flags = fcntl(master_socket, F_GETFL, 0);
+    // fcntl(master_socket, F_SETFL,flags | O_NONBLOCK);
+    u_long mode =1;
+    int result = ioctlsocket(master_socket, FIONBIO, &mode);
     //set master socket to allow multiple connections , 
     //this is just a good habit, it will work without this 
     if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )  
@@ -464,8 +490,10 @@ int main() {
                 perror("accept");  
                 exit(EXIT_FAILURE);  
             } 
-            int flags = fcntl(new_socket, F_GETFL, 0);
-            fcntl(new_socket, F_SETFL,flags | O_NONBLOCK); 
+            // int flags = fcntl(new_socket, F_GETFL, 0);
+            // fcntl(new_socket, F_SETFL,flags | O_NONBLOCK); 
+            u_long mode1 =1;
+            int result = ioctlsocket(master_socket, FIONBIO, &mode1);
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));         
             //add new socket to array of sockets 
             for (i = 0; i < MAX_CLIENTS; i++)  

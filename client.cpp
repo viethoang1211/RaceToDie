@@ -5,6 +5,10 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <Ws2tcpip.h>
+#include<io.h>
+#include <Winsock2.h>
+#include<windows.h>
 #ifdef WIN32
     #include <winsock.h>
 	#include <winsock2.h>
@@ -14,6 +18,7 @@
   #include <arpa/inet.h>
   #include <sys/un.h>
 #endif
+#pragma comment(lib, "Ws2_32.lib")
 // For sockets
 #include <unistd.h>
 #include <fcntl.h> // for non-blocking sockets
@@ -65,25 +70,54 @@ int main() {
     // cin.getline(server_ip, 16);
     // server_ip= "127.0.0.1";
     // create socket
+    // cout<<0;
+    WSADATA wsaData;
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != 0) {
+        std::cout << "WSAStartup failed: " << iResult << std::endl;
+        return 1;
+    }
+
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
-    int flags = fcntl(server_socket, F_GETFL, 0);
-    fcntl(server_socket, F_SETFL,  flags | O_NONBLOCK);
+    // int flags = fcntl(server_socket, F_GETFL, 0);
+    // fcntl(server_socket, F_SETFL,  flags | O_NONBLOCK);
+    u_long mode =1;
+    int result = ioctlsocket(server_socket, FIONBIO, &mode);
+    
+    // cout<<result;
+    
     // connect to server
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
     // tam thoi la test = local host
-    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
-        perror("inet_pton failed");
-        exit(EXIT_FAILURE);
-    }
-    while (connect(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        if (errno == EINPROGRESS || errno == EALREADY)
+    // if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    //     perror("inet_pton failed");
+    //     exit(EXIT_FAILURE);
+    // }
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    // cout<<"hi"<<endl;
+    // inet_addr("127.0.0.1");
+    
+    
+    // ham while fake
+    if (connect(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) {
+        // cout<<1;
+        // if (errno == EINPROGRESS || errno == EALREADY)
+        // cout << "Still connecting" << endl;
+        // sleep(1);
+        
+        int error_code = WSAGetLastError();
+        // cout<<error_code<<endl;
+        if (error_code == WSAEWOULDBLOCK || error_code == WSAEINPROGRESS)
         cout << "Still connecting" << endl;
-        sleep(1);
+        Sleep(100); // Sleep for 1 second
     }
+
+    // cout<<2;
+
     // Get player nickname from user input
     bool valid_nickname = false;
     do {
@@ -98,7 +132,8 @@ int main() {
             return 1;
             }
         else if (bytes_sent1<0){
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            int error_code= WSAGetLastError();
+            if (error_code == WSAEWOULDBLOCK)
                 cout << "Buffer is full so non-blocking socket won't work"<< endl;
             else
                 cout << "Send error" << endl;
@@ -106,14 +141,16 @@ int main() {
             }
         }
         char validation[50];
+        
         int byets_received1;
         do{
         byets_received1 = recv(server_socket, validation, 50, 0);
         if (byets_received1 <1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            int error_code= WSAGetLastError();
+            if (error_code == WSAEWOULDBLOCK) {
                 cout << "Waiting for nickname vaildation" << endl;
                 // The socket is temporarily unavailable, wait and try again
-                // sleep(1);
+                Sleep(1000);
             } 
             else {
                 cout << "Error recv data" << endl;
@@ -121,12 +158,19 @@ int main() {
             }
         } 
         else{
-            if(strcmp(validation,"Registration Completed Successfully"))
+            string tem02(validation);
+            // cout<<"check";
+            // cout<<validation<<endl;
+            if(tem02.substr(0,35)=="Registration Completed Successfully")
             {   valid_nickname=true;
                 cout << validation;
+                break;
+
                 }
-            else
+            else{
+                cout<<"wrong valid"<<validation<<endl;
                 cout << "Nickname not valid, try again." << endl;
+            }
             }
         }
         while(byets_received1<0);
@@ -139,7 +183,8 @@ int main() {
         char buffer[10];
         int bytes_recv = recv(server_socket, buffer,1,0);
         if(bytes_recv<0){
-            if (errno == EAGAIN || errno == EWOULDBLOCK){
+            int error_code= WSAGetLastError();
+            if (error_code == WSAEWOULDBLOCK){
                 cout << "Waiting for server to start the game" << endl;
                 sleep(1);
                 continue;
@@ -171,13 +216,15 @@ int main() {
             do{
             bytes_received2= recv(server_socket, buffer2, 1,0);
             if(bytes_received2<0){
-                if (errno == EAGAIN || errno == EWOULDBLOCK){
+                int error_code= WSAGetLastError();
+                    if (error_code == WSAEWOULDBLOCK){
                     cout << "Waiting for server to start the first round of the game" << endl;
                     sleep(1);
                 }
                 else {
-                    cout << "Error recv first round data" << endl;
-                    return 1;}
+                    // cout << "Error recv first round data" << endl;
+                    // return 1;
+                    }
             }
             else{
                 while(tem1<10){
@@ -199,12 +246,14 @@ int main() {
             do{
                 bytes_received3= recv(server_socket, buffer3, 1,0);
                 if(bytes_received3<0){
-                    if (errno == EAGAIN || errno == EWOULDBLOCK){
+                    int error_code= WSAGetLastError();
+                    if (error_code == WSAEWOULDBLOCK){
                         cout << "Waiting for server to start a new round" << endl;
                         sleep(1);}
                     else {
                         cout << "Error recv data" << endl;
-                        return 1;}
+                        // return 1;
+                        }
                 }
                 else{
                     while(tem1<10){
@@ -252,14 +301,16 @@ int main() {
             char q_buffer[10];
             bytes_received4=recv(server_socket,q_buffer,1,0);
             if(bytes_received4<0){
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                int error_code= WSAGetLastError();
+                    if (error_code == WSAEWOULDBLOCK)
                 {
                     cout << "Waiting for server to send the question" << endl;
                     sleep(1);
                 }
                 else {
-                    cout << "Error recv question" << endl;
-                    return 1;}
+                    // cout << "Error recv question" << endl;
+                    // return 1;
+                    }
             }
             else{
                 Packet p2;
@@ -285,13 +336,14 @@ int main() {
             char s_buffer[10];
             bytes_received5= recv(server_socket, s_buffer, 1,0);
             if(bytes_received5==-1){
-            if (errno == EAGAIN || errno == EWOULDBLOCK){
+                int error_code= WSAGetLastError();
+                    if (error_code == WSAEWOULDBLOCK){
                 cout << "Waiting for server to send the solution" << endl;
                 sleep(1);
                 }
             else{
-                cout << "Error recving solution:" << endl;
-                return 1;
+                // cout << "Error recving solution:" << endl;
+                // return 1;
                 }
             }
             else{
