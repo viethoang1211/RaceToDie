@@ -9,3 +9,4 @@
 *.sqlite
 *.json
 *.ipch
+Makefile
