@@ -155,12 +155,12 @@ void announce_start_game(){
 
     snprintf(length, sizeof(length), "0%d", 0);
 
-    if(race_length<9)
+    if(race_length<=9)
         snprintf(point, sizeof(point), "0%d", race_length);
     else
         snprintf(point, sizeof(point), "%d", race_length);
 
-    if(quesion_time<9)
+    if(quesion_time<=9)
         snprintf(position,sizeof(position), "0%d", quesion_time);
     else
         snprintf(position, sizeof(position), "%d", quesion_time);
@@ -187,7 +187,7 @@ void announce_new_round(){
             char point[10];
             char position[10];
             snprintf(type, sizeof(type), "%d", 1);
-            if(strlen(i.nickname.c_str())<9)
+            if(strlen(i.nickname.c_str())<=9)
             snprintf(length, sizeof(length), "0%d", strlen(i.nickname.c_str()));
             else
             snprintf(length, sizeof(length), "%d", strlen(i.nickname.c_str()));
@@ -195,7 +195,7 @@ void announce_new_round(){
             snprintf(point, sizeof(point), "0%d",i.points );
             else
             snprintf(point, sizeof(point), "-1");
-            if(i.position<9)
+            if(i.position<=9)
             snprintf(position,sizeof(position), "0%d", i.position);
             else
             snprintf(position, sizeof(position), "%d", i.position);
@@ -207,6 +207,7 @@ void announce_new_round(){
             strcat(msg,point); 
             strcat(msg,position);
             cout <<"New round message: "<< msg << endl;
+            
             int bytes_sent = send(x.socketID, msg, strlen(msg), 0);
             cout<<"Bytes sent: "<< bytes_sent<<endl;
             if (bytes_sent == -1) {
@@ -223,7 +224,7 @@ void announce_question(string question){
     char position[10];
     snprintf(type, sizeof(type), "%d", 3);
     snprintf(length, sizeof(length), "%d", strlen(question.c_str()));
-    if(strlen(question.c_str())<9)
+    if(strlen(question.c_str())<=9)
     snprintf(length, sizeof(length), "0%d", strlen(question.c_str()));
     else
     snprintf(length, sizeof(length), "%d", strlen(question.c_str()));
@@ -313,8 +314,8 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 if (FD_ISSET(sd, &readfds))  
                 {  
                     //Check if it was for closing , and also read the incoming message
-                    char buffer[20];    
-                    if ((valread = recv(sd,buffer,20,0)) == -1)  
+                    char *buffer= new char[10];    
+                    if ((valread = recv(sd,buffer,10,0)) == -1)  
                     {  
                         close(sd);  
                         players.erase(i);
@@ -332,7 +333,8 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                         cout << "Answers received:" <<tem2<< endl;
                         Message msg(i->socketID, std::chrono::system_clock::now(), tem2);
                         messages.push_back(msg);
-                    } 
+                    }
+                    delete[] buffer; 
                 }        
             }
             // auto now = std::chrono::high_resolution_clock::now(); // get the current time
@@ -375,6 +377,9 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         if (fattestExist) {
             fattestPlayerID = message_copy.end()->clientId;
         }
+        cout<<"check fattest player"<<endl;
+        cout<<fattestPlayerID<<endl;
+
         // tinh diem cho tung nguoi
         cout<<"check0"<<endl; 
         for (auto &x : players) {
@@ -384,10 +389,10 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         for (auto &x : players) {
             x.points = -1;
         }
-        for (auto &x : messages) {
-            cout<<"text check"<<endl;
-            cout<<x.text<<endl;
-        }
+        // for (auto &x : messages) {
+        //     cout<<"text check"<<endl;
+        //     cout<<x.text<<endl;
+        // }
         cout<<to_string(correctAnswer)<<endl;
         bool t = to_string(correctAnswer)==messages[0].text;
         cout<<t<<endl;

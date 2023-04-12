@@ -57,6 +57,7 @@ void read_packet(Packet &p){
     // }
     // else{
     l= atoi(length);
+    p.length=l;
     nbytes_read=recv(server_socket,p.Context,l,0);
     nbytes_read=recv(server_socket,point,2,0);
     p.point= atoi(point);
@@ -180,8 +181,8 @@ int main() {
     }
     while (!valid_nickname);
 
-    Player player1(nickname);
-    players.push_back(player1);
+    // Player player1(nickname);
+    // players.push_back(player1);
     do {
         char buffer[10];
         int bytes_recv = recv(server_socket, buffer,1,0);
@@ -215,7 +216,7 @@ int main() {
         // prepare for the first round, create a player object for each player the server send back
         if(round==0){
             int bytes_received2;
-            char buffer2[10];
+            char *buffer2=new char[10];
             int tem1=0;
             do{
             bytes_received2= recv(server_socket, buffer2, 1,0);
@@ -233,10 +234,17 @@ int main() {
             }
             else{
                 while(tem1<10){
+                    int trash;
                     Packet p2;
+                    if (tem1==0)
                     read_packet(p2);
+                    else{
+                    trash=recv(server_socket, buffer2, 1,0);
+                    read_packet(p2);
+                    }
+                    if (p2.length!=0) {
                     Player player2(p2.Context);
-                    players.push_back(player2);
+                    players.push_back(player2);}
                     tem1++;
                     }
                 }
@@ -263,8 +271,15 @@ int main() {
                 }
                 else{
                     while(tem1<players.size()){
+                        int trash2;
                         Packet p2;
+                        if (tem1==0)
                         read_packet(p2);
+                        else{
+                            trash2=recv(server_socket, buffer3, 1,0);
+                            read_packet(p2);
+                        }
+                        // cout<<"context"<<p2.Context<<endl;
                         for (auto x : players){
                             if(p2.Context==x.nickname){
                                 x.points=p2.point;
