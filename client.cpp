@@ -166,23 +166,16 @@ int main() {
             // cout<<"check";
             // cout<<validation<<endl;
             if(tem02.substr(0,35)=="Registration Completed Successfully")
-            {   valid_nickname=true;
-                cout << validation;
-                break;
-
-                }
-            else{
-                cout<<"wrong valid"<<validation<<endl;
+                {   
+                valid_nickname=true;
+                break;}
+            else
                 cout << "Nickname not valid, try again." << endl;
-            }
             }
         }
         while(byets_received1<0);
     }
     while (!valid_nickname);
-
-    // Player player1(nickname);
-    // players.push_back(player1);
     do {
         char buffer[10];
         int bytes_recv = recv(server_socket, buffer,1,0);
@@ -204,7 +197,6 @@ int main() {
             read_packet(p1);
             race_length= p1.point;
             answer_time= p1.position;
-            cout << "type:" << buffer << endl;
             cout << "The game will start now: " << endl;
             cout << "The race length will be: " << race_length << endl;
             cout << "Time to answer a question will be: " << answer_time << " seconds" << endl;
@@ -280,11 +272,11 @@ int main() {
                             read_packet(p2);
                         }
                         // cout<<"context"<<p2.Context<<endl;
-                        for (auto x : players){
+                        for (auto &x : players){
                             if(p2.Context==x.nickname){
                                 x.points=p2.point;
                                 x.position=p2.position;
-                                cout<<x.nickname<<" ,point: "<<x.points<<"position: "<<x.position<<endl;
+                                // cout<<x.nickname<<" ,point: "<<x.points<<"position: "<<x.position<<endl;
                             }
                     }
                         tem1++;

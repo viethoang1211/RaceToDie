@@ -253,13 +253,12 @@ void announce_solution(){
 }
 // 3. each turn 
 void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
-    int currentPlayerIndex = 0;
-    int questionCount = 0;
     bool winnerFound = false;
     // Toan bo message duoc nhan o server
     vector<Message> messages;
     int valread;
-    race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
+    // race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
+    race_length = 3;
     struct timeval timeout;
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
@@ -432,14 +431,16 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         for (auto x : players) {
             if (x.position>=race_length) {
                 winnerFound=true;
+                cout << "Winner found" << endl;
             }
         }
-        
-    }    
+        if(winnerFound==true){
+            cout << "The set will end after some time" << endl;
+            announce_new_round();
+            sleep(3000);
+        }
 
-    // Switch to the next player
-    currentPlayerIndex = (currentPlayerIndex + 1) % playerCount;
-    questionCount++;
+    }    
 }
 
 int main() {
