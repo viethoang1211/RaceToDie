@@ -325,10 +325,10 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                         string tem2(buffer);
                         char x ='-';
                         
-                        for (int i=0;i<tem2.length();i++){
-                            if (i==0&&tem2[i]==x) continue;
-                            if (tem2[i]=='0'||tem2[i]=='1'||tem2[i]=='2'||tem2[i]=='3'||tem2[i]=='4'||tem2[i]=='5'||tem2[i]=='6'||tem2[i]=='7'||tem2[i]=='8'||tem2[i]=='9') continue;
-                            tem2=tem2.substr(0,i);
+                        for (int b=0;b<tem2.length();b++){
+                            if (b==0&&tem2[b]==x) continue;
+                            if (tem2[b]=='0'||tem2[b]=='1'||tem2[b]=='2'||tem2[b]=='3'||tem2[b]=='4'||tem2[b]=='5'||tem2[b]=='6'||tem2[b]=='7'||tem2[b]=='8'||tem2[b]=='9') continue;
+                            tem2=tem2.substr(0,b);
                         }
                         cout << "Answers received:" <<tem2<< endl;
                         Message msg(i->socketID, std::chrono::system_clock::now(), tem2);
@@ -355,18 +355,21 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         announce_question(correctA);
         vector<Message> message_copy(messages);
         // xoa message nguoi sai
+       
         for (auto x = message_copy.begin(); x != message_copy.end(); ) {
             if (x->text != to_string(correctAnswer)) {
+                cout<<x->text<<endl;
                 message_copy.erase(x);
             }
             else {
                 ++x;
             }
         }
+        
 
         sort(message_copy.begin(), message_copy.end());
-        // kiem tra xem ai nhanh nhat  ~ message[message.size()-1] 
-
+        // kiem tra xem ai nhanh nhat  
+        
         // nguoi nhanh nhat co ton tai khong
         bool fattestExist = false;
         if (message_copy.size() > 0) {
@@ -375,16 +378,18 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         // ID cua nguoi nhanh nhat
         int fattestPlayerID=-1;
         if (fattestExist) {
-            fattestPlayerID = message_copy.end()->clientId;
+            
+            // cout<<"end mess"<<message_copy.begin()->clientId<<"text "<<message_copy.begin()->text<<endl;
+            fattestPlayerID = message_copy[0].clientId;
         }
         cout<<"check fattest player"<<endl;
         cout<<fattestPlayerID<<endl;
 
         // tinh diem cho tung nguoi
-        cout<<"check0"<<endl; 
-        for (auto &x : players) {
-            cout<<x.points<<endl;
-        }
+        // cout<<"check0"<<endl; 
+        // for (auto &x : players) {
+        //     cout<<x.points<<endl;
+        // }
 
         for (auto &x : players) {
             x.points = -1;
@@ -410,13 +415,13 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 }
             }
         }
-        cout<<"point check1"<<endl;
-        for (auto a:players){
-            cout<<a.points << endl;
-        }
+        // cout<<"point check1"<<endl;
+        // for (auto a:players){
+        //     cout<<a.points << endl;
+        // }
         
         for (auto &x : players) {
-            cout << "Point of player "<<x.nickname <<" :"<<x.points<<endl;
+            // cout << "Point of player "<<x.nickname <<" :"<<x.points<<endl;
             if (x.socketID == fattestPlayerID) {
                 x.points = countWrong;
             }
@@ -581,7 +586,7 @@ int main() {
             }          
         }
         // Check if we have enough players to start the game
-        if (players.size()>= 2) {
+        if (players.size()>= 3) {
             // announce(start_message);
             break;
         }   
