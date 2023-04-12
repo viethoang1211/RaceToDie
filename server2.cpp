@@ -53,8 +53,7 @@ vector<Player> players;
 vector<bool> disqualified;
 int master_socket;
 int max_sd;  
-// queue<int> turn_order;
-// mutex mtx;
+int acceptable_num=2;
 //set of socket descriptors 
 fd_set readfds;  
 // 1. register
@@ -136,6 +135,10 @@ void update_pos(){
                 players[i].position = 1;
             else if (players[i].position > race_length)
                 players[i].position = race_length;
+            if(players[i].wrong_answers_count==3){
+                cout<< "Dis" << endl;
+                players[i].position=-1;
+            }
         }
 }
 
@@ -176,9 +179,8 @@ void announce_start_game(){
     }
 }
 void announce_new_round(){
-    cout<<"point check"<<endl;
     for (auto a:players){
-        cout<<a.points << endl;
+        cout<<a.position << endl;
     }
     for(auto x: players){
         for(auto i: players){
@@ -191,11 +193,12 @@ void announce_new_round(){
             snprintf(length, sizeof(length), "0%d", strlen(i.nickname.c_str()));
             else
             snprintf(length, sizeof(length), "%d", strlen(i.nickname.c_str()));
-            if (i.points!=-1)
+            if (i.points!=-1)// the maximum users is 10 so points earned each round can't be over 9
             snprintf(point, sizeof(point), "0%d",i.points );
             else
             snprintf(point, sizeof(point), "-1");
-            if(i.position<=9)
+            cout << "nick" << i.nickname <<"pos "<< i.position << endl;
+            if(i.position<=9 && i.position>=0)
             snprintf(position,sizeof(position), "0%d", i.position);
             else
             snprintf(position, sizeof(position), "%d", i.position);
@@ -257,20 +260,23 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     // Toan bo message duoc nhan o server
     vector<Message> messages;
     int valread;
-    // race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
-    race_length = 3;
+    race_length = getRandomInt(MIN_LENGTH, MAX_LENGTH);
     struct timeval timeout;
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
     announce_start_game();
     Sleep(2000);
-    for (auto x : players) {
-            x.position = 1;
-        }
+    
+
     // Loop until a winner is found
     while (!winnerFound) {
         announce_new_round();
+
         Sleep(5000);
+        for (auto x=players.begin();x!=players.end();x++) {
+            if(x->position==-1)
+            players.erase(x);
+        }
         messages.clear();
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
@@ -303,6 +309,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                     max_sd = sd;  
             }     
             int activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);    
+            cout << "Player discon1" << endl;
             if ((activity < 0) && (errno!=EINTR))  
             {  
                 cout << "select in receving answers error" << endl; 
@@ -312,18 +319,19 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 int sd = i->socketID;           
                 if (FD_ISSET(sd, &readfds))  
                 {  
+                    cout << "Player discon2" << endl;
                     //Check if it was for closing , and also read the incoming message
                     char *buffer= new char[10];    
                     if ((valread = recv(sd,buffer,10,0)) == -1)  
                     {  
+                        cout << "Player discon3" << endl;
                         close(sd);  
                         players.erase(i);
                     } 
                     else 
                     { 
                         string tem2(buffer);
-                        char x ='-';
-                        
+                        char x ='-';      
                         for (int b=0;b<tem2.length();b++){
                             if (b==0&&tem2[b]==x) continue;
                             if (tem2[b]=='0'||tem2[b]=='1'||tem2[b]=='2'||tem2[b]=='3'||tem2[b]=='4'||tem2[b]=='5'||tem2[b]=='6'||tem2[b]=='7'||tem2[b]=='8'||tem2[b]=='9') continue;
@@ -407,18 +415,15 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                     if (j.clientId == x.socketID) {
                         if (to_string(correctAnswer) == j.text) {
                             x.points = 1;
+                            x.wrong_answers_count=0;
                         }
                         else {
-                            countWrong++;}
+                            countWrong++;
+                            x.wrong_answers_count++;}
                     }
                 }
             }
         }
-        // cout<<"point check1"<<endl;
-        // for (auto a:players){
-        //     cout<<a.points << endl;
-        // }
-        
         for (auto &x : players) {
             // cout << "Point of player "<<x.nickname <<" :"<<x.points<<endl;
             if (x.socketID == fattestPlayerID) {
@@ -476,7 +481,6 @@ int main() {
     u_long mode =1;
     int result = ioctlsocket(master_socket, FIONBIO, &mode);
     //set master socket to allow multiple connections , 
-    //this is just a good habit, it will work without this 
     if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )  
     {  
         perror("setsockopt");  
@@ -528,8 +532,7 @@ int main() {
             printf("select error");  
             continue;
         }        
-        //If something happened on the master socket , 
-        //then its an incoming connection 
+        //If something happened on the master socket ,then its an incoming connection 
         if (FD_ISSET(master_socket, &readfds))  
         {  
             if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)  
@@ -537,8 +540,6 @@ int main() {
                 perror("accept");  
                 exit(EXIT_FAILURE);  
             } 
-            // int flags = fcntl(new_socket, F_GETFL, 0);
-            // fcntl(new_socket, F_SETFL,flags | O_NONBLOCK); 
             u_long mode1 =1;
             int result = ioctlsocket(master_socket, FIONBIO, &mode1);
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));         
@@ -587,7 +588,7 @@ int main() {
             }          
         }
         // Check if we have enough players to start the game
-        if (players.size()>= 3) {
+        if (players.size()>= acceptable_num) {
             // announce(start_message);
             break;
         }   

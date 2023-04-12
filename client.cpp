@@ -290,7 +290,9 @@ int main() {
                     players.erase(i);
                 else if(i->position==-1 && i->nickname == nickname){
                     cout << "You have been killed by the cruelty of this race." << endl;
-                    break;
+                    while(true){
+                        sleep(10000);
+                    }
                 }
                 if(i->position>=race_length){
                     if(i->nickname == nickname){
@@ -354,7 +356,6 @@ int main() {
                 int error_code= WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK){
                 cout << "Waiting for server to send the solution" << endl;
-                // sleep(1);
                 Sleep(2000);
                 }
             else{
@@ -365,7 +366,7 @@ int main() {
             else{
             Packet p2;
             read_packet(p2);
-            cout << "Solution: " << p2.Context << " Point earned: "<< p2.point << endl;
+            cout << "Solution: " << p2.Context << endl;
             }
         }while(bytes_received5<0);
     }
