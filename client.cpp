@@ -262,7 +262,7 @@ int main() {
                         }
                 }
                 else{
-                    while(tem1<10){
+                    while(tem1<players.size()){
                         Packet p2;
                         read_packet(p2);
                         for (auto x : players){
@@ -313,11 +313,11 @@ int main() {
                 {
                     cout << "Waiting for server to send the question" << endl;
                     // sleep(1);
-                    Sleep(2000);
+                    Sleep(1000);
                 }
                 else {
-                    // cout << "Error recv question" << endl;
-                    // return 1;
+                    cout << "Error recv question" << endl;
+                    return 1;
                     }
             }
             else{

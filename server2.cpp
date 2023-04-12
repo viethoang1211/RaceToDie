@@ -86,7 +86,7 @@ int getRandomInt(int min, int max) {
 }
 // 3a. lay random operator
 char getRandomOperator(){
-	int x = rand()%5;
+	int x = getRandomInt(0,4);
 	switch(x){
 		case 0:
 			return '%';
@@ -265,12 +265,12 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     announce_start_game();
     Sleep(2000);
     for (auto x : players) {
-            x.position = 0;
+            x.position = 1;
         }
     // Loop until a winner is found
     while (!winnerFound) {
         announce_new_round();
-        Sleep(2000);
+        Sleep(5000);
         messages.clear();
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
@@ -330,7 +330,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                             tem2=tem2.substr(0,i);
                         }
                         cout << "Answers received:" <<tem2<< endl;
-                        Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
+                        Message msg(i->socketID, std::chrono::system_clock::now(), tem2);
                         messages.push_back(msg);
                     } 
                 }        
@@ -375,11 +375,22 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         if (fattestExist) {
             fattestPlayerID = message_copy.end()->clientId;
         }
-        // tinh diem cho tung nguoi 
+        // tinh diem cho tung nguoi
+        cout<<"check0"<<endl; 
+        for (auto &x : players) {
+            cout<<x.points<<endl;
+        }
+
         for (auto &x : players) {
             x.points = -1;
         }
-        
+        for (auto &x : messages) {
+            cout<<"text check"<<endl;
+            cout<<x.text<<endl;
+        }
+        cout<<to_string(correctAnswer)<<endl;
+        bool t = to_string(correctAnswer)==messages[0].text;
+        cout<<t<<endl;
         int countWrong = 0;
         for (auto &x : players) {
             if (x.socketID != fattestPlayerID) {
