@@ -176,6 +176,10 @@ void announce_start_game(){
     }
 }
 void announce_new_round(){
+    cout<<"point check"<<endl;
+    for (auto a:players){
+        cout<<a.points << endl;
+    }
     for(auto x: players){
         for(auto i: players){
             char type[10];
@@ -187,7 +191,10 @@ void announce_new_round(){
             snprintf(length, sizeof(length), "0%d", strlen(i.nickname.c_str()));
             else
             snprintf(length, sizeof(length), "%d", strlen(i.nickname.c_str()));
+            if (i.points!=-1)
             snprintf(point, sizeof(point), "0%d",i.points );
+            else
+            snprintf(point, sizeof(point), "-1");
             if(i.position<9)
             snprintf(position,sizeof(position), "0%d", i.position);
             else
@@ -197,7 +204,7 @@ void announce_new_round(){
             strcpy(msg,type);
             strcat(msg,length);
             strcat(msg, i.nickname.c_str());
-            strcat(msg,point);
+            strcat(msg,point); 
             strcat(msg,position);
             cout <<"New round message: "<< msg << endl;
             int bytes_sent = send(x.socketID, msg, strlen(msg), 0);
@@ -256,11 +263,14 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
     timeout.tv_sec= questionTimeLimit;
     timeout.tv_usec= 0;
     announce_start_game();
-    sleep(2);
+    Sleep(2000);
+    for (auto x : players) {
+            x.position = 0;
+        }
     // Loop until a winner is found
     while (!winnerFound) {
         announce_new_round();
-        sleep(2);
+        Sleep(2000);
         messages.clear();
         // 3a.  Get the two random integers and operator for the question
         int a = getRandomInt(-10000, 10000);
@@ -311,7 +321,14 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                     } 
                     else 
                     { 
-                        string tem2(buffer);  
+                        string tem2(buffer);
+                        char x ='-';
+                        
+                        for (int i=0;i<tem2.length();i++){
+                            if (i==0&&tem2[i]==x) continue;
+                            if (tem2[i]=='0'||tem2[i]=='1'||tem2[i]=='2'||tem2[i]=='3'||tem2[i]=='4'||tem2[i]=='5'||tem2[i]=='6'||tem2[i]=='7'||tem2[i]=='8'||tem2[i]=='9') continue;
+                            tem2=tem2.substr(0,i);
+                        }
                         cout << "Answers received:" <<tem2<< endl;
                         Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
                         messages.push_back(msg);
@@ -359,16 +376,17 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             fattestPlayerID = message_copy.end()->clientId;
         }
         // tinh diem cho tung nguoi 
-        for (auto x : players) {
+        for (auto &x : players) {
             x.points = -1;
         }
+        
         int countWrong = 0;
-        for (int i = 0; i < players.size(); i++) {
-            if (players[i].socketID != fattestPlayerID) {
+        for (auto &x : players) {
+            if (x.socketID != fattestPlayerID) {
                 for (auto j : messages) {
-                    if (j.clientId == players[i].socketID) {
+                    if (j.clientId == x.socketID) {
                         if (to_string(correctAnswer) == j.text) {
-                            players[i].points = 1;
+                            x.points = 1;
                         }
                         else {
                             countWrong++;}
@@ -376,8 +394,13 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 }
             }
         }
+        cout<<"point check1"<<endl;
+        for (auto a:players){
+            cout<<a.points << endl;
+        }
         
-        for (auto x : players) {
+        for (auto &x : players) {
+            cout << "Point of player "<<x.nickname <<" :"<<x.points<<endl;
             if (x.socketID == fattestPlayerID) {
                 x.points = countWrong;
             }
@@ -386,7 +409,7 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
         }
         update_pos();
         for (auto x : players) {
-            if (x.position==race_length) {
+            if (x.position>=race_length) {
                 winnerFound=true;
             }
         }
@@ -547,6 +570,7 @@ int main() {
             break;
         }   
     }
+    Sleep(3000);
     playSet(players.size(),players, QUESTION_TIME);
     return 0;
 }

@@ -116,7 +116,7 @@ int main() {
         // cout<<error_code<<endl;
         if (error_code == WSAEWOULDBLOCK || error_code == WSAEINPROGRESS)
         cout << "Still connecting" << endl;
-        Sleep(100); // Sleep for 1 second
+        Sleep(1000); // Sleep for 1 second
     }
 
     // cout<<2;
@@ -189,7 +189,8 @@ int main() {
             int error_code= WSAGetLastError();
             if (error_code == WSAEWOULDBLOCK){
                 cout << "Waiting for server to start the game" << endl;
-                sleep(1);
+                // sleep(1);
+                Sleep(2000);
                 continue;
                 }
         }
@@ -222,11 +223,12 @@ int main() {
                 int error_code= WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK){
                     cout << "Waiting for server to start the first round of the game" << endl;
-                    sleep(1);
+                    // sleep(1);
+                    Sleep(1000);
                 }
                 else {
-                    // cout << "Error recv first round data" << endl;
-                    // return 1;
+                    cout << "Error recv first round data" << endl;
+                    return 1;
                     }
             }
             else{
@@ -252,14 +254,15 @@ int main() {
                     int error_code= WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK){
                         cout << "Waiting for server to start a new round" << endl;
-                        sleep(1);}
+                        Sleep(2000);
+                        }
                     else {
                         cout << "Error recv data" << endl;
                         // return 1;
                         }
                 }
                 else{
-                    while(tem1<players.size()){
+                    while(tem1<10){
                         Packet p2;
                         read_packet(p2);
                         for (auto x : players){
@@ -309,7 +312,8 @@ int main() {
                     if (error_code == WSAEWOULDBLOCK)
                 {
                     cout << "Waiting for server to send the question" << endl;
-                    sleep(1);
+                    // sleep(1);
+                    Sleep(2000);
                 }
                 else {
                     // cout << "Error recv question" << endl;
@@ -343,7 +347,8 @@ int main() {
                 int error_code= WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK){
                 cout << "Waiting for server to send the solution" << endl;
-                sleep(1);
+                // sleep(1);
+                Sleep(2000);
                 }
             else{
                 // cout << "Error recving solution:" << endl;
