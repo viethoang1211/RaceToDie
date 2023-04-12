@@ -25,6 +25,8 @@
 // .h file
 #include "player.cpp"
 #include "packet.cpp"
+#include<SFML/system.hpp> //
+
 using namespace std;
 
 #define MAX_NICKNAME_LENGTH 10
@@ -71,6 +73,7 @@ int main() {
     // server_ip= "127.0.0.1";
     // create socket
     // cout<<0;
+    sf::Clock clock;
     WSADATA wsaData;
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
@@ -256,13 +259,14 @@ int main() {
                         }
                 }
                 else{
-                    while(tem1<10){
+                    while(tem1<players.size()){
                         Packet p2;
                         read_packet(p2);
                         for (auto x : players){
                             if(p2.Context==x.nickname){
                                 x.points=p2.point;
                                 x.position=p2.position;
+                                cout<<x.nickname<<" ,point: "<<x.points<<"position: "<<x.position<<endl;
                             }
                     }
                         tem1++;

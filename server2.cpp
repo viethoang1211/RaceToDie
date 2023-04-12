@@ -187,8 +187,7 @@ void announce_new_round(){
             snprintf(length, sizeof(length), "0%d", strlen(i.nickname.c_str()));
             else
             snprintf(length, sizeof(length), "%d", strlen(i.nickname.c_str()));
-            snprintf(point, sizeof(point), "0%d",0 );
-
+            snprintf(point, sizeof(point), "0%d",i.points );
             if(i.position<9)
             snprintf(position,sizeof(position), "0%d", i.position);
             else
@@ -305,14 +304,15 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
                 {  
                     //Check if it was for closing , and also read the incoming message
                     char buffer[20];    
-                    if ((valread = read(sd,buffer,20)) == 0)  
+                    if ((valread = recv(sd,buffer,20,0)) == -1)  
                     {  
                         close(sd);  
                         players.erase(i);
                     } 
                     else 
-                    {  
-                        cout << "Answers received:" << endl;
+                    { 
+                        string tem2(buffer);  
+                        cout << "Answers received:" <<tem2<< endl;
                         Message msg(i->socketID, std::chrono::system_clock::now(), buffer);
                         messages.push_back(msg);
                     } 
@@ -381,6 +381,8 @@ void playSet( int playerCount, vector<Player>& players, int questionTimeLimit) {
             if (x.socketID == fattestPlayerID) {
                 x.points = countWrong;
             }
+
+            cout << "Point of player "<<x.nickname <<" :"<<x.points<<endl;
         }
         update_pos();
         for (auto x : players) {
